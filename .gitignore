@@ -35,6 +35,7 @@ data/raw/
 *.pt
 *.onnx
 !sample*.csv
+!rizki 1/*.csv
 
 # ---- Environment & rahasia ----
 .env
