@@ -14,6 +14,7 @@
 | **Bahan** | 104 sumber: Heka 30 · Firlana 44 · Rizki 30 |
 | **Hasil turunan** | **50 permasalahan** — setiap butir punya rujukan sumber |
 | **Penyaringan** | 50 → 20 konsep bisnis → **5 permasalahan inti** |
+| **Cakupan saringan** | **Seluruh 50 permasalahan gabungan** (bukan per anak) — 23 masuk inti · 19 gugur · 8 di luar jangkauan |
 | **5 inti** | (1) Uang habis & jeratan pinjol · (2) Peluang & partner tim · (3) Burnout & tidur · (4) Skripsi mandek · (5) Mahasiswa baru tanpa peta |
 
 ---
@@ -217,7 +218,109 @@ Diambil dari 25 permasalahan 🟢 + 2 permasalahan 🟡 yang paling menyakitkan 
 
 ---
 
-## 5. 5 PERMASALAHAN INTI (hasil saring 50 → 5)
+## 5. 5 PERMASALAHAN INTI (hasil saring SELURUH 50 → 5)
+
+> **Penting:** penyaringan ini dilakukan pada **seluruh 50 permasalahan gabungan**, **bukan per anak**. Setiap masalah bernomor 1–50 dari Bagian 3 ditarik ke salah satu dari 5 inti, atau dinyatakan gugur beserta alasannya (lihat 5.1).
+
+### 5.0 Peta lengkap: 50 nomor → 5 inti (atau gugur)
+
+Ini peta yang membuktikan **tidak ada nomor yang menggantung**.
+
+#### ✅ Masuk INTI #1 — Uang habis & jeratan pinjol (7 masalah)
+
+| No | Permasalahan |
+|---|---|
+| 1 | Uang saku habis sebelum akhir bulan, tidak ada pencatatan |
+| 2 | Tidak tahu ke mana uang pergi |
+| 3 | Terjebak pinjol/paylater untuk kebutuhan mendesak |
+| 4 | Paylater jadi gaya hidup |
+| 5 | Konsumtif karena tekanan teman sebaya |
+| 7 | Pendapatan pekerja lepas tidak stabil → anggaran kacau |
+| 9 | Biaya akademik tak terduga merusak rencana bulanan |
+
+#### ✅ Masuk INTI #2 — Peluang & partner tim (5 masalah)
+
+| No | Permasalahan |
+|---|---|
+| 45 | Info lomba/magang/beasiswa tersebar di banyak kanal |
+| 46 | Bingung mencari partner/anggota tim lomba |
+| 47 | Sulit menemukan magang relevan dengan jurusan |
+| 48 | Tidak bisa menyusun *learning plan* magang |
+| 50 | Tidak tahu peluang mana yang cocok dengan kemampuan sendiri |
+
+#### ✅ Masuk INTI #3 — Burnout & tidur (6 masalah)
+
+| No | Permasalahan |
+|---|---|
+| 19 | Burnout tidak disadari sampai nilai jatuh |
+| 20 | Kelelahan mental meski aktivitas fisik ringan |
+| 25 | Tidak tahu kapan "capek biasa" jadi "butuh bantuan" |
+| 27 | Tidur larut & durasi kurang |
+| 28 | Kualitas tidur buruk |
+| 29 | Jam tidur tidak teratur |
+
+#### ✅ Masuk INTI #4 — Skripsi mandek (5 masalah)
+
+| No | Permasalahan |
+|---|---|
+| 33 | Sulit bertemu dosen pembimbing |
+| 34 | Revisi berulang tanpa arah jelas |
+| 35 | Tidak tahu langkah berikutnya setelah bimbingan |
+| 36 | Skripsi mandek berbulan-bulan tanpa progres terukur |
+| 37 | Gangguan tidur & keseimbangan hidup saat skripsi |
+
+#### ✅ Masuk INTI #5 — Mahasiswa baru tanpa peta (1 masalah + turunan)
+
+| No | Permasalahan |
+|---|---|
+| 45 | Info tersebar (sisi lokal kampus: kos, warung, layanan, UKM) — *dipakai juga di INTI #2* |
+
+> No. 45 dipakai **dua kali** karena punya dua wajah: sisi **peluang nasional** (Inti #2) dan sisi **peta lokal kampus** (Inti #5). Ini bukan kesalahan hitung — satu sumber, dua kebutuhan berbeda.
+
+#### Ringkasan peta 50 → 5
+
+| Tujuan | Jumlah masalah |
+|---|---|
+| ✅ INTI #1 — Uang habis & pinjol | 7 |
+| ✅ INTI #2 — Peluang & partner | 5 |
+| ✅ INTI #3 — Burnout & tidur | 6 |
+| ✅ INTI #4 — Skripsi mandek | 5 |
+| ✅ INTI #5 — Mahasiswa baru | 1 *(= no. 45, sama dengan INTI #2)* |
+| 🟡 Gugur — solusi sudah ada pemenangnya | 19 |
+| 🔴 Di luar jangkauan (butuh ahli/kebijakan) | 8 |
+| **TOTAL** | **50** |
+
+> **Cara hitung (diverifikasi otomatis):** 23 nomor unik masuk inti (no. 45 dihitung sekali meski dipakai di dua inti) + 19 gugur + 8 di luar jangkauan = **50**. Tidak ada nomor yang hilang, tidak ada yang dobel selain no. 45 yang memang by design.
+
+#### 🟡🔴 GUGUR — daftar lengkap masalah yang TIDAK masuk 5 inti
+
+**🟡 Gugur karena solusinya sudah ada pemenangnya (20 masalah):**
+
+| No | Permasalahan | Sudah ada | Nasib |
+|---|---|---|---|
+| 8 | Pisah uang pribadi vs usaha | BukuWarung, BukuKas, Accurate | Fitur opsional Inti #1 |
+| 10, 11, 12 | Prokrastinasi (3 varian) | Google Calendar, Todoist, Notion, Forest, StudyDue, Studora | **Tidak jadi produk** |
+| 13, 14 | Kuliah + kerja (2 varian) | Alat manajemen waktu | Lapisan beban di Inti #3 & #4 |
+| 15, 16, 17 | Belajar mandiri (3 varian) | YouTube, aplikasi belajar | Logika target di Inti #2 |
+| 18 | Tugas menumpuk → jam koma | — | Jadi pemicu burnout di Inti #3 |
+| 26 | Perbandingan sosial medsos | — | Di luar jangkauan |
+| 32 | Sulit bangun pagi | Alarm | Konsekuensi #27 & #29 |
+| 38, 39, 40 | Nilai, materi sulit, praktik | Bimbel, YouTube | Tidak jadi produk |
+| 42, 43, 44 | Ketergantungan AI (3 varian) | ChatGPT, Gemini, Claude | **Tidak jadi produk** |
+| 49 | Info tidak terkurasi | SejutaCita, FlashCampus | Fitur di Inti #2 |
+
+**🔴 Di luar jangkauan — butuh tenaga ahli, modal, atau kebijakan (7 masalah):**
+
+| No | Permasalahan | Kenapa tidak diambil |
+|---|---|---|
+| 6 | KIP-K tidak cukup & telat cair | Kebijakan pemerintah |
+| 21 | Stres akademik tinggi menjelang ujian | Butuh layanan konseling |
+| 22 | Gejala depresi & kecemasan | Butuh psikolog berlisensi |
+| 23 | Stigma cari bantuan psikologis | Isu sosial, bukan produk |
+| 24 | Akses konseling kampus sulit | Kebijakan kampus |
+| 30 | Kurang aktivitas fisik | Butuh pendampingan gizi/olahraga |
+| 31 | Pola makan buruk | Butuh pendampingan gizi |
+| 41 | Joki tugas | Tidak etis diprodukkan |
 
 ### 5.1 Tabel penilaian 20 konsep → 5 inti
 
@@ -229,15 +332,99 @@ Diambil dari 25 permasalahan 🟢 + 2 permasalahan 🟡 yang paling menyakitkan 
 | 4 | **Skripsi mandek** | 33–37 (5 masalah) | 5 | 3 | 2 | 5 | **15** | ✅ INTI #4 |
 | 5 | **Mahasiswa baru tanpa peta** | 45 (turunan) | 5 | 4 | 2 | 4 | **15** | ✅ INTI #5 |
 
-### 5.2 Lima permasalahan inti — versi final
+### 5.2 LIMA PERMASALAHAN INTI — bentuk kartu
 
-| # | Permasalahan | Dari nomor |
-|---|---|---|
-| **1** | Uang habis sebelum akhir bulan, tidak tahu ke mana perginya, dan tergoda pinjol saat mendesak | 1, 2, 3, 4, 5, 7, 9 |
-| **2** | Tahu ada peluang, tapi tidak tahu mana yang cocok — dan tidak punya tim untuk mengambilnya | 45, 46, 47, 48, 50 |
-| **3** | Capek terus, tidur kacau, burnout tidak disadari sampai nilai jatuh | 19, 20, 25, 27, 28, 29 |
-| **4** | Skripsi mandek bukan karena malas, tapi tidak bisa ketemu dosen & tidak tahu langkah berikutnya | 33, 34, 35, 36, 37 |
-| **5** | Mahasiswa baru/rantau tidak tahu apa-apa soal kampus & kotanya | 45 |
+---
+
+#### 🟦 INTI #1 — "Uang habis sebelum akhir bulan, dan aku tergoda pinjol"
+
+**Permasalahan utuh:**
+> Uang saku habis sebelum akhir bulan, tidak tahu ke mana perginya, dan saat ada kebutuhan mendesak tergoda pinjol/paylater.
+
+| | |
+|---|---|
+| **Dilebur dari** | Masalah **1, 2, 3, 4, 5, 7, 9** (7 masalah) |
+| **Bukti** | Literasi keuangan rendah → arus kas tak terkendali `[H1]`; pinjol jadi respons tekanan ekonomi `[H2][F-Keu]`; paylater jadi gaya hidup `[H2]` |
+| **Skor** | 17/20 |
+| **Produk** | **Dompet Siaga** |
+| **Sudah ada** | Money Lover, Finansialku, BukuWarung → kuat di *mencatat* |
+| **Celah kita** | Tidak ada yang **memprediksi "uang habis tanggal berapa"** + mendeteksi pola menuju pinjol |
+
+---
+
+#### 🟩 INTI #2 — "Aku tahu ada peluang, tapi tidak tahu mana yang cocok — dan tidak punya tim"
+
+**Permasalahan utuh:**
+> Tahu ada lomba/magang/beasiswa, tapi tidak tahu mana yang cocok untukku, dan kalau butuh tim aku tidak punya siapa-siapa.
+
+| | |
+|---|---|
+| **Dilebur dari** | Masalah **45, 46, 47, 48, 50** (5 masalah) |
+| **Bukti** | **80% dari 350 mahasiswa FILKOM UB** bingung cari partner `[R1]`; **48%** sulit magang relevan, **40%** sulit *learning plan* `[R9]` |
+| **Skor** | **19/20 — tertinggi** |
+| **Produk** | **Kompas Peluang** |
+| **Sudah ada** | SejutaCita (2,5 jt pengguna), FlashCampus, Glints, LinkedIn → kuat di *informasi* |
+| **Celah kita** | **Belum ada platform Indonesia dengan pencari partner tim berbasis skill** |
+
+---
+
+#### 🟨 INTI #3 — "Capek terus, tidurku kacau, dan aku tidak sadar sudah burnout"
+
+**Permasalahan utuh:**
+> Merasa lelah terus dan tidur kacau, tapi tidak menyadari sudah menuju burnout sampai nilai akademik jatuh.
+
+| | |
+|---|---|
+| **Dilebur dari** | Masalah **19, 20, 25, 27, 28, 29** (6 masalah) |
+| **Bukti** | Kelelahan emosional + sinisme + efikasi turun `[F-Akad]`; tidur buruk ↔ burnout `[F-Tidur]`; mahasiswa tidak tahu kapan harus cari bantuan `[F-Mental]` |
+| **Skor** | 16/20 |
+| **Produk** | **Detak** |
+| **Sudah ada** | Sleep Cycle, Google Fit, Calm, Riliv → kuat di *melacak tidur* |
+| **Celah kita** | Semua itu **tidak tahu jadwal kuliahmu** — tidak bisa gabungkan deadline + tidur jadi peringatan |
+
+---
+
+#### 🟧 INTI #4 — "Skripsiku mandek bukan karena malas, tapi aku tidak bisa ketemu dosen"
+
+**Permasalahan utuh:**
+> Skripsi mandek berbulan-bulan karena sulit bertemu dosen pembimbing dan tidak tahu langkah berikutnya setelah bimbingan.
+
+| | |
+|---|---|
+| **Dilebur dari** | Masalah **33, 34, 35, 36, 37** (5 masalah) |
+| **Bukti** | Sulit bertemu dosen & revisi berulang = stressor utama skripsi `[F-Akad]`; sebagian besar responden stres + gangguan tidur `[F-Akad]` |
+| **Skor** | 15/20 |
+| **Produk** | **Teman Skripsi** |
+| **Sudah ada** | Google Calendar, Notion, Todoist, SIAKAD → kuat di *mengingatkan* |
+| **Celah kita** | Tidak ada yang menyelesaikan **penjadwalan bertemu dosen** + prediksi risiko telat sidang |
+
+---
+
+#### 🟪 INTI #5 — "Aku baru di kampus ini dan tidak tahu apa-apa"
+
+**Permasalahan utuh:**
+> Mahasiswa baru/rantau tidak tahu kos mana yang aman, makan di mana, layanan apa saja, UKM apa, dan siapa yang bisa ditanya.
+
+| | |
+|---|---|
+| **Dilebur dari** | Masalah **45** (sisi peta lokal kampus) |
+| **Bukti** | Kegagalan adaptasi memicu stres `[F-Sosial]`; mahasiswa rantau hadapi tantangan kos, biaya, budaya, nutrisi `[F-Keu][F-Sosial]` |
+| **Skor** | 15/20 |
+| **Produk** | **Peta Kampus** |
+| **Sudah ada** | Google Maps, grup WA angkatan, IG BEM → kuat di *navigasi & chat* |
+| **Celah kita** | Info kos/warung/layanan **tidak ada di peta mana pun** — cuma di story IG yang hilang 24 jam |
+
+---
+
+**Ringkasan 5 kartu:**
+
+| Inti | Kalimat mahasiswa | Dilebur dari | Skor | Produk |
+|---|---|---|---|---|
+| **#1** | "Uangku habis terus, aku tergoda pinjol" | 1, 2, 3, 4, 5, 7, 9 | 17 | Dompet Siaga |
+| **#2** | "Tidak tahu peluang mana yang cocok, dan tidak punya tim" | 45, 46, 47, 48, 50 | **19** | Kompas Peluang |
+| **#3** | "Capek terus, tidur kacau, tidak sadar burnout" | 19, 20, 25, 27, 28, 29 | 16 | Detak |
+| **#4** | "Skripsi mandek, tidak bisa ketemu dosen" | 33, 34, 35, 36, 37 | 15 | Teman Skripsi |
+| **#5** | "Baru di kampus, tidak tahu apa-apa" | 45 | 15 | Peta Kampus |
 
 ### 5.3 Lima modul produk (Tugas 3)
 
