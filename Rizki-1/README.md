@@ -8,6 +8,27 @@ Folder ini berisi riset topik untuk proyek **Platform Informasi Akademik Terpusa
 |---|---|
 | [`riset-informasi-akademik-terpusat.md`](riset-informasi-akademik-terpusat.md) | Dokumen riset lengkap: latar belakang, bukti kebutuhan, gap analysis, usulan solusi, model matching, risiko, roadmap, metrik, dan daftar 30 sumber |
 | [`sumber-30.csv`](sumber-30.csv) | 30 sumber dalam format tabel (kategori, judul, penerbit, URL, data kunci) |
+| [`persempitan-scope-5-konsep-bisnis.md`](persempitan-scope-5-konsep-bisnis.md) | Penyaringan 5 konsep bisnis (skoring, kompetitor, model bisnis) → terpilih **Sifela** |
+| [`sifela/`](sifela/) | **Prototipe web Sifela** — pusat info part-time berbasis shift, freelance kecil, dan gig harian; pencarian, rekomendasi, radius, paywall Plus |
+
+## Prototipe Web Sifela
+
+Folder [`sifela/`](sifela/) berisi prototipe statis (HTML/CSS/JS, tanpa build step) dari
+konsep kerja paruh waktu fleksibel:
+
+- Pencarian + filter (kategori, tipe kerja, hari, upah) dan 4 mode pengurutan
+- Rekomendasi dengan skor 4 faktor (skill 40%, minat 20%, jadwal 20%, jarak 20%)
+- Filter wilayah & radius (Gratis 10 km, Plus 50 km)
+- Wajib sign in; fitur berbayar dibatasi (6 lowongan, 3 lamaran/bulan, skor detail, chat)
+- Halaman pembayaran Sifela Plus & Mitra Pro (simulasi QRIS / e-wallet / transfer)
+- Sisi mitra: pasang lowongan gratis (2 aktif), upgrade Mitra Pro untuk penonjolan & statistik
+- Filter kecocokan profil (skor minimal 70%) selain filter jadwal, wilayah, dan radius
+
+Cara menjalankan: buka `sifela/index.html` di browser, atau
+`python -m http.server 8099` di dalam folder tersebut. Detail lengkap ada di
+[`sifela/README.md`](sifela/README.md).
+
+> Data lowongan pada prototipe adalah fiktif dan alur pembayaran hanya simulasi.
 
 ## Ringkasan Singkat
 

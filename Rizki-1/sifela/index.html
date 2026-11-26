@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sifela.id — Kerja fleksibel untuk mahasiswa & mitra usaha</title>
+<meta name="description" content="Sifela.id: pusat info part-time berbasis shift, freelance kecil, dan gig harian. Cari kerja sesuai jadwal & wilayah, atau pasang lowongan usaha secara gratis.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%234f46e5'/><text y='72' x='50' font-size='58' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>S</text></svg>">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<!-- ============ LANDING ============ -->
+<div id="view-landing" class="view">
+  <header class="landing-nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#">
+        <span class="brand-mark">S</span>
+        <span class="brand-text">Sifela</span>
+      </a>
+      <nav class="landing-links">
+        <a href="#fitur">Fitur</a>
+        <a href="#cara">Cara kerja</a>
+        <a href="#mitra">Untuk Mitra</a>
+        <a href="#harga">Harga</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn btn-ghost" data-go="auth" data-mode="login">Masuk</button>
+        <button class="btn btn-primary" data-go="auth" data-mode="register">Daftar gratis</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <span class="pill">sifela.id · prototipe data contoh</span>
+          <h1>Kerja fleksibel yang <span class="hl">muat di sela kuliah</span>.</h1>
+          <p class="lead">
+            Sifela memusatkan info part-time berbasis shift, freelance kecil, dan gig harian
+            di sekitar kampusmu. Pilih slot yang tidak bentrok dengan jadwal kuliah — bukan
+            sebaliknya.
+          </p>
+          <div class="hero-cta">
+            <button class="btn btn-primary btn-lg" data-go="auth" data-mode="register">Mulai gratis</button>
+            <button class="btn btn-outline btn-lg" data-demo-login="free">Coba akun demo</button>
+          </div>
+          <ul class="hero-stats">
+            <li><strong id="stat-jobs">38</strong><span>lowongan contoh</span></li>
+            <li><strong id="stat-cities">6</strong><span>kota</span></li>
+            <li><strong id="stat-types">3</strong><span>tipe kerja</span></li>
+          </ul>
+        </div>
+
+        <div class="hero-card" aria-hidden="true">
+          <div class="hc-head">
+            <span class="dot"></span> Rekomendasi untukmu
+            <span class="hc-badge">92% cocok</span>
+          </div>
+          <div class="hc-item">
+            <div class="hc-logo">☕</div>
+            <div>
+              <strong>Barista Shift Pagi</strong>
+              <p>Kopi Senja · Dago · 2,4 km</p>
+            </div>
+            <span class="hc-pay">Rp22rb<span>/jam</span></span>
+          </div>
+          <div class="hc-item">
+            <div class="hc-logo">🎨</div>
+            <div>
+              <strong>Desain 12 Feed</strong>
+              <p>Studio Rupa · Remote</p>
+            </div>
+            <span class="hc-pay">Rp450rb<span>/proyek</span></span>
+          </div>
+          <div class="hc-item muted">
+            <div class="hc-logo">🔒</div>
+            <div>
+              <strong>5 lowongan lain</strong>
+              <p>Buka dengan Sifela Plus</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="logo-strip">
+      <div class="wrap logo-strip-inner">
+        <span class="ls-label">Mitra contoh</span>
+        <div class="ls-logos">
+          <span>☕ Kopi Senja</span>
+          <span>🎨 Studio Rupa</span>
+          <span>📚 Bimbel Cerdas</span>
+          <span>🎪 Eventia</span>
+          <span>🛍️ Toko Buku Aksara</span>
+          <span>🛵 KirimAja</span>
+        </div>
+      </div>
+    </div>
+
+    <section id="fitur" class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Bukan job board biasa</h2>
+          <p>Dibangun untuk jadwal kuliah yang berubah tiap semester.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature">
+            <div class="fi">🔎</div>
+            <h3>Pencarian & filter tajam</h3>
+            <p>Cari berdasarkan kata kunci, kategori, tipe kerja, upah, dan hari tersedia.</p>
+          </article>
+          <article class="feature">
+            <div class="fi">🧭</div>
+            <h3>Jangkauan & radius</h3>
+            <p>Atur radius dari kampus atau kos. Lihat berapa lowongan yang benar-benar terjangkau.</p>
+          </article>
+          <article class="feature">
+            <div class="fi">✨</div>
+            <h3>Rekomendasi berbasis kecocokan</h3>
+            <p>Skor dihitung dari skill, minat, jadwal kuliah, dan jarak — bukan sekadar urutan terbaru.</p>
+          </article>
+          <article class="feature">
+            <div class="fi">🗓️</div>
+            <h3>Deteksi bentrok jadwal</h3>
+            <p>Sistem menyembunyikan shift yang bertabrakan dengan jam kuliahmu.</p>
+          </article>
+          <article class="feature">
+            <div class="fi">📄</div>
+            <h3>Lamaran terlacak</h3>
+            <p>Simpan lowongan, kirim lamaran, dan pantau statusnya di satu tempat.</p>
+          </article>
+          <article class="feature">
+            <div class="fi">💳</div>
+            <h3>Free vs Plus</h3>
+            <p>Fitur dasar gratis selamanya. Plus membuka akses penuh dan skor kecocokan detail.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="cara" class="section section-alt">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Tiga langkah, selesai</h2>
+        </div>
+        <ol class="steps">
+          <li><span class="step-n">1</span><h3>Daftar & isi profil</h3><p>Skill, minat, jadwal kuliah, dan radius.</p></li>
+          <li><span class="step-n">2</span><h3>Lihat yang cocok</h3><p>Rekomendasi diurutkan berdasarkan kecocokan nyata.</p></li>
+          <li><span class="step-n">3</span><h3>Ambil shift</h3><p>Lamar, konfirmasi, dan mulai kerja tanpa bentrok kuliah.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Dipakai mahasiswa yang jadwalnya padat</h2>
+          <p>Testimoni fiktif untuk menggambarkan pengalaman yang dituju.</p>
+        </div>
+        <div class="quote-grid">
+          <figure class="quote">
+            <div class="q-stars">★★★★★</div>
+            <blockquote>“Dulu aku tolak shift karena takut bentrok kelas. Sekarang tinggal centang hari kosong, sisanya otomatis.”</blockquote>
+            <figcaption>
+              <span class="q-avatar">NA</span>
+              <span><strong>Nadia</strong><small>20 · Universitas Brawijaya</small></span>
+            </figcaption>
+          </figure>
+          <figure class="quote">
+            <div class="q-stars">★★★★★</div>
+            <blockquote>“Freelance desain feed Rp450rb selesai 4 hari. Lumayan buat uang bulanan tanpa ninggalin kelas.”</blockquote>
+            <figcaption>
+              <span class="q-avatar">RA</span>
+              <span><strong>Raka</strong><small>22 · Telkom University</small></span>
+            </figcaption>
+          </figure>
+          <figure class="quote">
+            <div class="q-stars">★★★★☆</div>
+            <blockquote>“Ada info jarak dari kos. Jadi aku tahu ongkos dan waktunya worth it atau nggak sebelum melamar.”</blockquote>
+            <figcaption>
+              <span class="q-avatar">SI</span>
+              <span><strong>Sinta</strong><small>19 · Universitas Gadjah Mada</small></span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="mitra" class="mitra-band">
+      <div class="wrap mitra-band-grid">
+        <div class="mitra-copy">
+          <span class="pill pill-light">Untuk pemilik usaha</span>
+          <h2>Pasang lowongan <span class="hl-light">gratis</span>. Jangkau lebih jauh saat kamu butuh.</h2>
+          <p>
+            Punya kafe, toko, studio, atau acara? Pasang info shift part-time, freelance kecil,
+            dan gig harian di sifela.id tanpa biaya. Kamu yang menentukan hari, jam, wilayah, dan skill yang dibutuhkan.
+          </p>
+          <div class="hero-cta">
+            <button class="btn btn-primary btn-lg" data-go="auth" data-mode="register">Daftar sebagai mitra</button>
+            <a class="btn btn-outline btn-lg" href="#harga">Lihat pilihan harga</a>
+          </div>
+          <p class="mitra-foot">Gratis: 2 lowongan aktif · Berbayar: hingga 10 lowongan + penonjolan & statistik.</p>
+        </div>
+        <div class="mitra-preview">
+          <div class="mp-row">
+            <span class="mp-ico">📝</span>
+            <div><strong>Pasang gratis</strong><p>Isi form singkat: jadwal, wilayah, upah, dan skill.</p></div>
+          </div>
+          <div class="mp-row">
+            <span class="mp-ico">📍</span>
+            <div><strong>Ketemu yang dekat</strong><p>Pencari kerja memfilter berdasarkan radius dari lokasi mereka.</p></div>
+          </div>
+          <div class="mp-row">
+            <span class="mp-ico">🚀</span>
+            <div><strong>Mitonjolkan dengan Pro</strong><p>Badge “Ditonjolkan”, statistik dilihat, dan verifikasi prioritas.</p></div>
+          </div>
+          <div class="mp-chip">Mitra Pro mulai Rp49.000/bulan</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="harga" class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Harga sederhana</h2>
+          <p>Gratis untuk mulai. Naik ke Plus kalau kamu serius cari penghasilan.</p>
+        </div>
+        <div class="price-grid">
+          <article class="price-card">
+            <h3>Gratis</h3>
+            <p class="price"><span>Rp0</span>/bulan</p>
+            <ul class="check-list">
+              <li>6 lowongan pertama</li>
+              <li>Pencarian & filter dasar</li>
+              <li>Radius hingga 10 km</li>
+              <li>3 lamaran per bulan</li>
+              <li>Simpan lowongan</li>
+            </ul>
+            <button class="btn btn-outline btn-block" data-go="auth" data-mode="register">Mulai gratis</button>
+          </article>
+
+          <article class="price-card featured">
+            <span class="ribbon">Paling populer</span>
+            <h3>Plus</h3>
+            <p class="price"><span>Rp29.000</span>/bulan</p>
+            <ul class="check-list">
+              <li><b>Semua</b> lowongan terbuka</li>
+              <li>Skor kecocokan + alasannya</li>
+              <li>Radius hingga 50 km</li>
+              <li>Lamaran tanpa batas</li>
+              <li>Kontak langsung & chat</li>
+              <li>Notifikasi shift baru</li>
+            </ul>
+            <button class="btn btn-dark btn-block" data-demo-login="free">Coba alurnya</button>
+          </article>
+        </div>
+        <p class="fine-print">
+          Plus berbayar memberi <b>semua lowongan, skor kecocokan lengkap, radius 50 km, lamaran tanpa batas, dan kontak mitra</b>.
+          Punya usaha? <a href="#mitra" style="color:var(--brand);font-weight:700">Lihat Mitra Pro →</a>
+        </p>
+        <p class="fine-print">Ini prototipe. Tidak ada pembayaran nyata — alur pembayaran hanya simulasi.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <div class="wrap foot-inner">
+      <div>
+        <strong>sifela.id</strong>
+        <p>Prototipe konsep bisnis. Data lowongan fiktif dan pembayaran simulasi.</p>
+      </div>
+      <div class="foot-links">
+        <a href="#fitur">Fitur</a>
+        <a href="#mitra">Mitra</a>
+        <a href="#harga">Harga</a>
+      </div>
+      <p class="foot-note">Dibuat untuk tugas Kelompok 2 · 2026</p>
+    </div>
+  </footer>
+</div>
+
+<!-- ============ AUTH ============ -->
+<div id="view-auth" class="view hidden">
+  <div class="auth-shell">
+    <div class="auth-aside">
+      <button class="btn btn-ghost btn-sm back-btn" data-go="landing">← Kembali</button>
+      <div class="auth-aside-inner">
+        <h2>Kerja yang <span class="hl">ikut jadwalmu</span>, bukan sebaliknya.</h2>
+        <ul class="auth-points">
+          <li>✓ Info part-time terpusat, tanpa grup WA</li>
+          <li>✓ Shift 3–6 jam, cocok di sela kuliah</li>
+          <li>✓ Radius dari kos/kampus</li>
+          <li>✓ Freelance kecil & gig harian</li>
+        </ul>
+        <div class="auth-quote">
+          <p>“Dulu nyari kerja part-time harus scroll 6 grup WA. Sekarang tinggal filter shift yang nggak bentrok kelas.”</p>
+          <span>— testimoni fiktif untuk demo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-main">
+      <div class="auth-box">
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-auth-tab="login">Masuk</button>
+          <button class="auth-tab" data-auth-tab="register">Daftar</button>
+        </div>
+
+        <form id="form-login" class="auth-form">
+          <h3>Selamat datang kembali</h3>
+          <p class="form-sub">Masuk untuk membuka pencarian lowongan.</p>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" placeholder="nama@kampus.ac.id" autocomplete="email" required>
+          </label>
+          <label class="field">
+            <span>Kata sandi</span>
+            <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+          </label>
+          <p class="form-error" data-error-for="login"></p>
+          <button class="btn btn-primary btn-block" type="submit">Masuk</button>
+          <p class="form-alt">Belum punya akun? <button type="button" class="link" data-auth-tab="register">Daftar gratis</button></p>
+        </form>
+
+        <form id="form-register" class="auth-form hidden">
+          <h3>Buat akun gratis</h3>
+          <p class="form-sub">Tidak perlu kartu kredit.</p>
+          <label class="field">
+            <span>Nama lengkap</span>
+            <input type="text" name="name" placeholder="Nama kamu" autocomplete="name" required>
+          </label>
+          <label class="field">
+            <span>Email kampus</span>
+            <input type="email" name="email" placeholder="nama@kampus.ac.id" autocomplete="email" required>
+          </label>
+          <div class="field">
+            <span>Daftar sebagai</span>
+            <div class="role-pick">
+              <label class="role-option"><input type="radio" name="role" value="pencari" checked><span>🎓 Pencari kerja</span></label>
+              <label class="role-option"><input type="radio" name="role" value="mitra"><span>🏪 Pemilik usaha</span></label>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="field">
+              <span>Kota</span>
+              <select name="city" id="reg-city" required></select>
+            </label>
+            <label class="field">
+              <span>Kata sandi</span>
+              <input type="password" name="password" placeholder="min. 6 karakter" autocomplete="new-password" required minlength="6">
+            </label>
+          </div>
+          <p class="form-error" data-error-for="register"></p>
+          <button class="btn btn-primary btn-block" type="submit">Daftar & lanjut</button>
+          <p class="form-alt">Sudah punya akun? <button type="button" class="link" data-auth-tab="login">Masuk</button></p>
+        </form>
+
+        <div class="demo-box">
+          <strong>Akun demo</strong>
+          <div class="demo-btns">
+            <button class="btn btn-sm btn-outline" data-demo-login="free">Gratis</button>
+            <button class="btn btn-sm btn-outline" data-demo-login="premium">Plus (aktif)</button>
+            <button class="btn btn-sm btn-outline" data-demo-login="mitra">Mitra</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="view-app" class="view hidden">
+  <header class="appbar">
+    <button class="brand brand-btn" data-app-nav="cari">
+      <span class="brand-mark">S</span>
+      <span class="brand-text">Sifela</span>
+    </button>
+
+    <div class="appbar-search">
+      <span class="search-ico">🔎</span>
+      <input type="search" id="global-search" placeholder="Cari barista, desain, tutor…" autocomplete="off">
+    </div>
+
+    <nav class="appnav">
+      <button class="appnav-item active" data-app-nav="cari">Cari kerja</button>
+      <button class="appnav-item" data-app-nav="rekomendasi">Rekomendasi</button>
+      <button class="appnav-item" data-app-nav="lamaran">Lamaran</button>
+      <button class="appnav-item" data-app-nav="mitra">Mitra</button>
+      <button class="appnav-item" data-app-nav="premium">Plus</button>
+    </nav>
+
+    <div class="appbar-right">
+      <span id="plan-badge" class="plan-badge">Gratis</span>
+      <button class="avatar" id="avatar-btn" title="Profil"></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="side-block">
+        <div class="side-head">
+          <h4>Wilayah</h4>
+        </div>
+        <select id="filter-city" class="input"></select>
+        <div class="radius-row">
+          <label class="side-label">Radius: <b id="radius-label">10 km</b></label>
+          <input type="range" id="filter-radius" min="1" max="50" value="10" step="1">
+          <p class="side-hint" id="radius-hint"></p>
+        </div>
+        <div class="reach-bars" id="reach-bars"></div>
+      </div>
+
+      <div class="side-block">
+        <div class="side-head"><h4>Kategori</h4></div>
+        <div class="chips" id="filter-cats"></div>
+      </div>
+
+      <div class="side-block">
+        <div class="side-head"><h4>Tipe kerja</h4></div>
+        <div class="chips" id="filter-types"></div>
+      </div>
+
+      <div class="side-block">
+        <div class="side-head"><h4>Hari tersedia</h4></div>
+        <div class="chips chips-days" id="filter-days"></div>
+      </div>
+
+      <div class="side-block">
+        <div class="side-head"><h4>Upah minimum</h4></div>
+        <div class="range-row">
+          <input type="range" id="filter-pay" min="0" max="60000" value="0" step="5000">
+          <b id="pay-label">Bebas</b>
+        </div>
+      </div>
+
+      <div class="side-block">
+        <div class="side-head"><h4>Hanya yang cocok jadwal</h4></div>
+        <label class="switch">
+          <input type="checkbox" id="filter-schedule">
+          <span class="switch-track"></span>
+          <span class="switch-text">Sembunyikan yang bentrok</span>
+        </label>
+      </div>
+
+      <div class="side-block">
+        <div class="side-head"><h4>Kecocokan profil</h4></div>
+        <label class="switch">
+          <input type="checkbox" id="filter-match">
+          <span class="switch-track"></span>
+          <span class="switch-text">Skor minimal 70%</span>
+        </label>
+      </div>
+
+      <button class="btn btn-ghost btn-block btn-sm" id="reset-filters">Reset filter</button>
+    </aside>
+
+    <main class="app-main" id="app-main"></main>
+  </div>
+</div>
+
+<!-- ============ OVERLAYS ============ -->
+<div id="modal-root" class="modal-root hidden">
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-sheet" id="modal-sheet" role="dialog" aria-modal="true"></div>
+</div>
+
+<div id="toast-root" class="toast-root"></div>
+
+<script src="assets/data.js?v=10"></script>
+<script src="assets/app.js?v=10"></script>
+</body>
+</html>
