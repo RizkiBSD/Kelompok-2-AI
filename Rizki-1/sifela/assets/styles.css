@@ -1179,6 +1179,252 @@ button { font-family: inherit; cursor: pointer; }
 .success-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 
 /* ============================================================
+   TEMA GELAP — HOMEPAGE & HALAMAN PEMBAYARAN
+   Warna diambil dari foto: navy #1b1b45 / #272666 / #2c2a71,
+   teks terang #f4f6fa / #c9d1e3, aksen #617daa / #44419f.
+   ============================================================ */
+#view-landing,
+#view-payment {
+  --ink: #f4f6fa;
+  --ink-2: #c9d1e3;
+  --muted: #a6b2cf;
+  --line: rgba(201, 209, 227, .18);
+  --surface: #24245f;
+  --brand: #8aa6d8;
+  --brand-2: #617daa;
+  --brand-soft: rgba(97, 125, 170, .2);
+  --gold-soft: rgba(245, 158, 11, .12);
+  --ok-soft: rgba(16, 185, 129, .14);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 85% 6%, rgba(68, 65, 159, .55), transparent 38%),
+    radial-gradient(circle at 10% 28%, rgba(97, 125, 170, .18), transparent 32%),
+    linear-gradient(180deg, #1b1b45 0%, #272666 55%, #1b1b45 100%);
+  min-height: 100vh;
+}
+
+/* navigasi */
+#view-landing .landing-nav,
+#view-payment .payment-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(27, 27, 69, .92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+}
+#view-landing .brand-text,
+#view-payment .brand-text { color: #f4f6fa; }
+#view-landing .brand-mark,
+#view-payment .brand-mark {
+  background: linear-gradient(135deg, #44419f, #617daa);
+  color: #fff;
+}
+#view-landing .landing-links,
+#view-payment .landing-links { color: #c9d1e3; }
+#view-landing .landing-links a:hover,
+#view-landing .landing-links button:hover { color: #a5b4fc; }
+#view-landing .nav-link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+#view-landing .pill {
+  background: rgba(97, 125, 170, .2);
+  color: #d6e2ff;
+}
+#view-landing .hl,
+#view-payment .hl {
+  background: linear-gradient(105deg, #9db6e8, #617daa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+#view-payment .payment-nav-note {
+  margin-left: auto;
+  font-size: 12px;
+  color: #a6b2cf;
+}
+
+/* teks dan kartu */
+#view-landing .lead,
+#view-landing .section-head p,
+#view-landing .feature p,
+#view-landing .steps p,
+#view-landing .mitra-copy > p,
+#view-landing .mp-row p,
+#view-landing .fine-print,
+#view-landing .foot-inner p,
+#view-payment .panel-sub,
+#view-payment .paywall-foot,
+#view-payment .pay-instruction p { color: #c9d1e3; }
+#view-landing .hero-stats span,
+#view-landing .hc-head,
+#view-landing .hc-item p,
+#view-landing .hc-pay span,
+#view-landing .mitra-foot,
+#view-landing .ls-label,
+#view-landing .price-card h3 { color: #a6b2cf; }
+#view-landing .hero-card,
+#view-landing .feature,
+#view-landing .steps li,
+#view-landing .quote,
+#view-landing .price-card,
+#view-payment .panel,
+#view-payment .success-card {
+  background: rgba(39, 38, 102, .72);
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 44px -24px rgba(0, 0, 0, .6);
+}
+#view-landing .hero-card { transform: rotate(-1deg); }
+#view-landing .hc-item,
+#view-landing .hc-head { border-color: var(--line); }
+#view-landing .hc-pay,
+#view-landing .foot-inner strong,
+#view-payment .panel h3,
+#view-payment .plan-price { color: #f4f6fa; }
+#view-landing .hc-logo,
+#view-landing .fi,
+#view-landing .q-avatar {
+  background: rgba(97, 125, 170, .2);
+  color: #e8eefc;
+}
+#view-landing .hc-item.muted .hc-logo { background: rgba(255, 255, 255, .08); }
+#view-landing .hc-badge {
+  background: rgba(16, 185, 129, .18);
+  color: #86efac;
+}
+#view-landing .step-n,
+#view-payment .checkout-step b {
+  background: linear-gradient(135deg, #44419f, #617daa);
+  color: #fff;
+}
+#view-landing .section-alt { background: rgba(44, 42, 113, .28); }
+#view-landing .check-list li::before { color: #86efac; }
+#view-landing .ribbon { background: linear-gradient(105deg, #f59e0b, #fbbf24); }
+#view-landing .price-card.featured {
+  background: rgba(68, 65, 159, .32);
+  border-color: rgba(245, 158, 11, .55);
+}
+#view-landing .btn-primary,
+#view-payment .btn-primary {
+  background: linear-gradient(105deg, #44419f, #617daa);
+  box-shadow: 0 12px 26px -12px rgba(97, 125, 170, .9);
+  color: #fff;
+}
+#view-landing .btn-outline,
+#view-payment .btn-outline {
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(201, 209, 227, .32);
+  color: #f4f6fa;
+}
+#view-landing .btn-outline:hover,
+#view-payment .btn-outline:hover {
+  background: rgba(255, 255, 255, .12);
+  border-color: #617daa;
+}
+#view-landing .btn-dark { background: #617daa; color: #15153a; }
+#view-landing .btn-dark:hover { background: #8aa6d8; }
+#view-landing .link,
+#view-payment .link { color: #a5b4fc; }
+#view-landing .landing-footer {
+  background: rgba(27, 27, 69, .6);
+  border-top: 1px solid var(--line);
+}
+
+/* mitra contoh dan testimoni */
+#view-landing .logo-strip {
+  padding: 18px 0;
+  background: rgba(27, 27, 69, .45);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+#view-landing .logo-strip-inner { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+#view-landing .ls-logos { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; color: #c9d1e3; }
+#view-landing .quote-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+#view-landing .quote { margin: 0; padding: 24px; border-radius: var(--radius); }
+#view-landing .q-stars { color: #fbbf24; letter-spacing: .12em; margin-bottom: 12px; }
+#view-landing .quote blockquote { margin: 0 0 18px; font-size: 14px; line-height: 1.7; color: #e8eefc; }
+#view-landing .quote figcaption { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+#view-landing .quote figcaption small { display: block; font-size: 11px; color: #a6b2cf; }
+#view-landing .q-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 800;
+}
+#view-landing .mitra-band {
+  background: radial-gradient(circle at 80% 20%, rgba(68, 65, 159, .55), transparent 45%),
+              linear-gradient(135deg, #1b1b45, #2c2a71 60%, #1b1b45);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+#view-landing .mitra-preview {
+  background: rgba(39, 38, 102, .55);
+  border-color: var(--line);
+}
+#view-landing .mp-row { border-bottom-color: rgba(201, 209, 227, .14); }
+#view-landing .mp-ico { background: rgba(97, 125, 170, .2); }
+
+/* halaman pembayaran */
+#view-payment .wrap.payment-page { padding-top: 40px; padding-bottom: 72px; }
+#view-payment .page-head h2 { font-size: clamp(26px, 3.4vw, 36px); margin: 14px 0 8px; }
+#view-payment .page-head p { color: #c9d1e3; }
+#view-payment .plan-card {
+  background: rgba(27, 27, 69, .5);
+  border-color: var(--line);
+  color: #f4f6fa;
+}
+#view-payment .plan-card.selected {
+  border-color: #617daa;
+  box-shadow: 0 0 0 3px rgba(97, 125, 170, .25);
+}
+#view-payment .plan-card h4,
+#view-payment .plan-note,
+#view-payment .checkout-row span { color: #a6b2cf; }
+#view-payment .plan-note { color: #86efac; }
+#view-payment .checkout-summary {
+  background: rgba(27, 27, 69, .55);
+  border-color: var(--line);
+}
+#view-payment .checkout-row.total span { color: #f4f6fa; }
+#view-payment .pay-method {
+  background: rgba(27, 27, 69, .5);
+  border-color: var(--line);
+  color: #f4f6fa;
+}
+#view-payment .pay-method.selected {
+  border-color: #617daa;
+  box-shadow: 0 0 0 3px rgba(97, 125, 170, .25);
+}
+#view-payment .qris-box {
+  background: repeating-linear-gradient(45deg, #272666, #272666 6px, #2c2a71 6px, #2c2a71 12px);
+  border-color: var(--line);
+  color: #f4f6fa;
+}
+#view-payment .qris-box small { color: #d6e2ff; }
+#view-payment .pay-code {
+  background: rgba(27, 27, 69, .6);
+  border-color: var(--line);
+  color: #d6e2ff;
+}
+#view-payment .demo-note {
+  background: rgba(245, 158, 11, .12);
+  border-color: rgba(245, 158, 11, .35);
+  color: #fcd34d;
+}
+#view-payment .success-card > p { color: #c9d1e3; }
+#view-payment .success-ico { background: rgba(16, 185, 129, .16); }
+#view-payment .success-chip {
+  background: linear-gradient(105deg, #44419f, #617daa);
+  color: #fff;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1080px) {
@@ -1228,4 +1474,24 @@ button { font-family: inherit; cursor: pointer; }
   .owner-row { grid-template-columns: 40px 1fr; }
   .owner-actions { grid-column: 1 / -1; justify-content: flex-start; }
   .foot-links { display: none; }
+}
+
+/* menu tetap dapat diakses pada layar kecil */
+@media (max-width: 720px) {
+  #view-landing .nav-inner,
+  #view-payment .nav-inner {
+    height: auto;
+    min-height: 64px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+    gap: 10px 18px;
+  }
+  #view-landing .landing-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    font-size: 12.5px;
+  }
+  #view-landing .quote-grid { grid-template-columns: 1fr; }
+  #view-payment .payment-nav-note { display: none; }
 }

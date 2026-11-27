@@ -532,8 +532,8 @@
     const visible = premium ? results.length : Math.min(results.length, FREE.visibleJobs);
 
     const head = '<div class="page-head">' +
-      "<h2>Cari kerja di " + esc(cityOf(state.filters.city).name) + "</h2>" +
-      "<p>Part-time berbasis shift, freelance kecil, dan gig harian di sekitar kamu.</p>" +
+      "<h2>Cari Lowongan di " + esc(cityOf(state.filters.city).name) + "</h2>" +
+      "<p>Pekerjaan paruh waktu berbasis shift, proyek freelance kecil, dan pekerjaan harian di sekitar Anda.</p>" +
       "</div>";
 
     const banner = premium ? "" :
@@ -972,9 +972,12 @@
     const method = state.checkout.method;
     const title = mitra ? "Mitra Pro" : "Sifela Plus";
 
-    const head = '<div class="page-head"><button class="link" data-app-nav="' + (mitra ? "mitra" : "premium") +
-      '">← Kembali</button><h2 style="margin-top:10px">Pembayaran ' + title + "</h2>" +
-      "<p>Pilih paket, tentukan metode, lalu konfirmasi. Ini simulasi — tidak ada uang yang ditarik.</p></div>";
+    const back = paymentViewOpen()
+      ? '<button class="link" data-go="landing">← Kembali ke Beranda</button>'
+      : '<button class="link" data-app-nav="' + (mitra ? "mitra" : "premium") + '">← Kembali</button>';
+    const head = '<div class="page-head">' + back +
+      '<h2 style="margin-top:10px">Pembayaran ' + title + "</h2>" +
+      "<p>Pilih paket, tentukan metode pembayaran, lalu konfirmasi. Ini simulasi; tidak ada dana yang ditarik.</p></div>";
 
     const step1 = '<div class="panel"><div class="checkout-step"><b>1</b><h3>Pilih paket</h3></div>' +
       '<div class="plan-grid">' + plans.map(p =>
@@ -1012,25 +1015,33 @@
       "</div>" +
       '<div class="demo-note">⚠️ Mode demo. Tombol di bawah hanya mengubah status paket di browser ini.</div>' +
       '<button class="btn btn-gold btn-block" data-pay>Bayar ' + fmtRpFull(plan.price) + "</button>" +
-      '<p class="paywall-foot">Dengan melanjutkan, kamu menyetujui simulasi langganan sifela.id.</p>' +
+      '<p class="paywall-foot">Dengan melanjutkan, Anda menyetujui simulasi langganan sifela.id.</p>' +
       "</div></div>";
 
-    $("#app-main").innerHTML = head + '<div class="checkout-grid"><div>' + step1 + step2 + "</div>" + summary + "</div>";
+    checkoutTarget().innerHTML = head + '<div class="checkout-grid"><div>' + step1 + step2 + "</div>" + summary + "</div>";
   }
 
   function renderSuccess() {
     const mitra = state.checkout.product === "mitra";
-    $("#app-main").innerHTML =
+    const inPayment = paymentViewOpen();
+    const primary = inPayment
+      ? (mitra
+          ? '<button class="btn btn-primary" data-go="cari">Kelola Lowongan</button>'
+          : '<button class="btn btn-primary" data-go="cari">Mulai Cari Lowongan</button>')
+      : (mitra
+          ? '<button class="btn btn-primary" data-app-nav="mitra">Kelola lowongan</button>'
+          : '<button class="btn btn-primary" data-app-nav="cari">Mulai cari kerja</button>');
+    const secondary = inPayment
+      ? '<button class="btn btn-outline" data-go="landing">Kembali ke Beranda</button>'
+      : '<button class="btn btn-outline" data-app-nav="premium">Lihat paket</button>';
+
+    checkoutTarget().innerHTML =
       '<div class="success-card"><div class="success-ico">🎉</div>' +
       "<h2>Pembayaran berhasil</h2>" +
-      "<p>" + (mitra ? "Mitra Pro" : "Sifela Plus") + " aktif di akun ini. Seluruh fitur berbayar langsung terbuka.</p>" +
+      "<p>" + (mitra ? "Mitra Pro" : "Sifela Plus") +
+        " aktif pada akun ini. Seluruh fitur berbayar langsung dapat digunakan.</p>" +
       '<div class="success-chip">' + (mitra ? "Mitra Pro" : "Sifela Plus") + " aktif</div>" +
-      '<div class="success-actions">' +
-        (mitra
-          ? '<button class="btn btn-primary" data-app-nav="mitra">Kelola lowongan</button>'
-          : '<button class="btn btn-primary" data-app-nav="cari">Mulai cari kerja</button>') +
-        '<button class="btn btn-outline" data-app-nav="premium">Lihat paket</button>' +
-      "</div>" +
+      '<div class="success-actions">' + primary + secondary + "</div>" +
       '<p class="paywall-foot">Simulasi prototipe sifela.id — tidak ada transaksi nyata.</p>' +
       "</div>";
   }
@@ -1131,6 +1142,13 @@
       state.user.plan = { type: "plus", until: until, plan: plan.id };
     }
     persistUser();
+
+    if (paymentViewOpen()) {
+      renderSuccess();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     renderSidebar();
     state.tab = "sukses";
     renderApp();
@@ -1311,9 +1329,55 @@
      AUTH
      ============================================================ */
   function showView(name) {
-    ["landing", "auth", "app"].forEach(v => {
+    ["landing", "auth", "app", "payment"].forEach(v => {
       $("#view-" + v).classList.toggle("hidden", v !== name);
     });
+    window.scrollTo(0, 0);
+  }
+
+  /* halaman pembayaran bisa dibuka tanpa masuk lebih dulu */
+  function paymentViewOpen() {
+    return !$("#view-payment").classList.contains("hidden");
+  }
+
+  function checkoutTarget() {
+    return paymentViewOpen() ? $("#payment-main") : $("#app-main");
+  }
+
+  function guestUser() {
+    return {
+      name: "Pengguna Tamu",
+      email: "tamu@sifela.id",
+      pass: hashPass("tamu1234"),
+      role: "pencari",
+      profile: defaultProfile("bandung"),
+      plan: { type: "free", until: 0 },
+      partnerPlan: { type: "free", until: 0 },
+      saved: [],
+      applications: []
+    };
+  }
+
+  /* Menu "Cari Lowongan" langsung membuka hasil pencarian.
+     Pengguna tanpa sesi mendapat akun tamu sementara. */
+  function openSearch() {
+    if (!state.user) state.user = guestUser();
+    state.tab = "cari";
+    state.filters.city = state.user.profile.city;
+    state.filters.radius = Math.min(state.user.profile.radius, isPremium() ? MAX_RADIUS : FREE.maxRadius);
+    showView("app");
+    renderSidebar();
+    renderApp();
+    if (!sessionEmail()) toast("Pencarian ditampilkan dengan akun tamu.", "ok");
+  }
+
+  /* Tombol Sifela Plus di homepage langsung menuju pembayaran */
+  function openGuestCheckout() {
+    if (!state.user) state.user = guestUser();
+    state.checkout.product = "plus";
+    state.checkout.planId = PLANS[0].id;
+    showView("payment");
+    renderCheckout();
     window.scrollTo(0, 0);
   }
 
@@ -1458,6 +1522,8 @@
         ev.preventDefault();
         const dest = goBtn.dataset.go;
         if (dest === "auth") { showView("auth"); setAuthTab(goBtn.dataset.mode || "login"); }
+        else if (dest === "cari") openSearch();
+        else if (dest === "payment") openGuestCheckout();
         else showView(dest);
         return;
       }
@@ -1559,8 +1625,8 @@
       }, 180);
     });
 
-    // app main delegated
-    $("#app-main").addEventListener("click", (ev) => {
+    // klik di area aplikasi dan halaman pembayaran memakai penangan yang sama
+    function handleMainClick(ev) {
       const t = ev.target;
 
       const ckPlan = t.closest("[data-checkout-plan]");
@@ -1631,7 +1697,10 @@
         toast("Plus dijeda (demo)");
         return;
       }
-    });
+    }
+
+    $("#app-main").addEventListener("click", handleMainClick);
+    $("#payment-main").addEventListener("click", handleMainClick);
 
     $("#app-main").addEventListener("change", (ev) => {
       const t = ev.target;

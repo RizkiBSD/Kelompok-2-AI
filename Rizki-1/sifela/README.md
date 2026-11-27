@@ -58,11 +58,21 @@ Akun hasil registrasi sendiri juga tersimpan di browser yang sama.
 
 ## Fitur dan pembatasan
 
-### Semua pengguna wajib masuk dulu
+### Halaman depan
 
-Landing page boleh dibuka tanpa akun, tetapi **pencarian, rekomendasi, lamaran, dan profil
-terkunci di balik sign in**. Tanpa sesi, aplikasi hanya menampilkan halaman depan dan form
-masuk/daftar.
+Menu utama berisi empat item: **Beranda**, **Akun & Profil**, **Untuk Perusahaan**, dan
+**Cari Lowongan**. Halaman depan memakai tema gelap navy (sampled dari foto referensi) dan
+tetap menampilkan **Paket dan Harga**—tanpa menu harga terpisah. Bagian **Cari Lowongan**
+merangkum enam filter: pencarian, bidang, gaji, lokasi dan jarak, tempat kerja, serta jadwal.
+
+Tombol **Buka Pembayaran Plus** langsung membuka halaman pembayaran tanpa perlu masuk lebih
+dulu. Pengguna yang belum memiliki sesi mendapat akun tamu sementara; pembayaran tetap simulasi.
+
+### Akses tamu dan akun
+
+Menu **Cari Lowongan** langsung membuka hasil pencarian. Tanpa sesi, aplikasi memakai akun
+tamu sementara (data tidak tersimpan sebagai akun tetap). Untuk menyimpan profil dan lamaran,
+daftar atau masuk melalui menu **Akun & Profil**.
 
 ### Matriks fitur
 
