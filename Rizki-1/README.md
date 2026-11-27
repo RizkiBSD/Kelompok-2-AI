@@ -29,9 +29,10 @@ konsep kerja paruh waktu fleksibel:
 - Filter kecocokan profil (skor minimal 70%) selain filter jadwal, wilayah, dan radius
 
 Cara menjalankan: buka `sifela/index.html` di browser, atau
-`python -m http.server 8099` di dalam folder tersebut. Untuk hosting statis, folder
-`sifela/` sudah siap di-deploy ke Vercel dengan **Root Directory** `Rizki-1/sifela`.
-Detail lengkap ada di [`sifela/README.md`](sifela/README.md).
+`python -m http.server 8099` di dalam folder tersebut. Untuk hosting statis, aplikasi
+sudah siap di-deploy ke Vercel: gunakan **Root Directory** `Rizki-1/sifela`, atau
+biarkan `Rizki-1` karena `vercel.json` di folder ini mengalihkan Output Directory ke
+`sifela`. Detail lengkap ada di [`sifela/README.md`](sifela/README.md).
 
 > Data lowongan pada prototipe adalah fiktif dan alur pembayaran hanya simulasi.
 
