@@ -90,6 +90,10 @@ Menu **Cari Lowongan** langsung membuka hasil pencarian. Tanpa sesi, aplikasi me
 tamu sementara (data tidak tersimpan sebagai akun tetap). Untuk menyimpan profil dan lamaran,
 daftar atau masuk melalui menu **Akun & Profil**.
 
+Jika pengguna sudah masuk, menu **Akun & Profil** di halaman depan langsung membuka halaman
+profil—bukan halaman masuk/daftar. Tombol **Keluar dari Akun** tersedia di bagian bawah
+halaman profil. Pengguna tanpa sesi tetap diarahkan ke halaman masuk/daftar.
+
 Tema gelap navy dipakai konsisten di halaman depan, pembayaran, pencarian, rekomendasi,
 lamaran, profil, ruang mitra, autentikasi, modal, dan notifikasi. Bilah navigasi aplikasi
 memuat **Beranda**, **Cari Lowongan**, **Rekomendasi**, **Lamaran**, **Akun & Profil**,

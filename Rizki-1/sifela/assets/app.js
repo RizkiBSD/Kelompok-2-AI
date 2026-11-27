@@ -815,10 +815,15 @@
           (u.role === "mitra" ? "Kelola lowongan" : "Mode mitra") + "</button>" +
         (isPremium() ? '<button class="btn btn-outline btn-sm" id="pf-cancel">Jeda Plus (demo)</button>' :
           '<button class="btn btn-gold btn-sm" data-open-premium>Upgrade ke Plus</button>') +
-        '<button class="btn btn-outline btn-sm" id="pf-logout">Keluar</button>' +
       "</div></div>";
 
-    $("#app-main").innerHTML = head + card + ringkasan + pengalaman + minat + skill + jadwal + akun;
+    const keluar = '<div class="panel signout-panel">' +
+      "<div><h3>Keluar dari akun</h3>" +
+      '<p class="panel-sub">Anda perlu masuk kembali untuk mengakses profil dan lamaran.</p></div>' +
+      '<button class="btn btn-outline" id="pf-logout">Keluar dari Akun</button>' +
+      "</div>";
+
+    $("#app-main").innerHTML = head + card + ringkasan + pengalaman + minat + skill + jadwal + akun + keluar;
   }
 
   function renderPremium() {
@@ -1468,6 +1473,21 @@
     if (!sessionEmail()) toast("Pencarian ditampilkan dengan akun tamu.", "ok");
   }
 
+  /* Menu "Akun & Profil": pengguna yang sudah masuk langsung ke profil.
+     Pengguna tanpa sesi tetap diarahkan ke halaman masuk/daftar. */
+  function openAccount() {
+    if (sessionEmail() && state.user) {
+      state.tab = "profil";
+      showView("app");
+      renderSidebar();
+      renderApp();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    showView("auth");
+    setAuthTab("register");
+  }
+
   /* Tombol Sifela Plus di homepage langsung menuju pembayaran */
   function openGuestCheckout() {
     if (!state.user) state.user = guestUser();
@@ -1636,6 +1656,7 @@
         ev.preventDefault();
         const dest = goBtn.dataset.go;
         if (dest === "auth") { showView("auth"); setAuthTab(goBtn.dataset.mode || "login"); }
+        else if (dest === "akun") openAccount();
         else if (dest === "cari") openSearch();
         else if (dest === "payment") openGuestCheckout();
         else showView(dest);

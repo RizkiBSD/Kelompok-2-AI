@@ -910,6 +910,16 @@ button { font-family: inherit; cursor: pointer; }
 }
 .exp-row-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .exp-row-head strong { font-size: 13px; color: var(--ink); }
+.signout-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  border-color: rgba(201, 209, 227, .28);
+}
+.signout-panel .panel-sub { margin-bottom: 0; }
 
 .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .day-btn {
