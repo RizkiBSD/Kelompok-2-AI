@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Environment variables (rahasia)
+.env
+.env.local
+.env.*.local
+
+# Kecualikan template agar tetap bisa di-commit
+!.env.example
+
+# Log & output build
+*.log
+dist/
