@@ -35,6 +35,22 @@ Lalu buka <http://127.0.0.1:8099/>.
 **Pilihan 3 — GitHub Pages.** Karena statis, folder ini bisa langsung dijadikan situs
 GitHub Pages (set source ke root repo, buka `/Rizki-1/sifela/`).
 
+**Pilihan 4 — Vercel.** Folder ini sudah memuat `vercel.json`, sehingga dapat langsung
+dideploy sebagai situs statis:
+
+1. Di dashboard Vercel, pilih **Add New → Project** lalu import repository GitHub ini.
+2. Pada **Configure Project**, set **Root Directory** menjadi `Rizki-1/sifela`.
+3. Biarkan **Framework Preset** pada *Other* / kosong, **Build Command** kosong, dan
+   **Output Directory** pada akar folder tersebut.
+4. Klik **Deploy**. Tidak ada variabel lingkungan yang diperlukan untuk prototipe ini.
+
+Alternatif lewat CLI (setelah `vercel login`):
+
+```powershell
+cd Rizki-1\sifela
+npx vercel --prod
+```
+
 ---
 
 ## Akun demo
