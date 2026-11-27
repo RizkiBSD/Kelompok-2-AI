@@ -195,8 +195,29 @@
       radius: 10,
       onboarded: false,
       headline: "",
-      campus: ""
+      campus: "",
+
+      /* data kerja yang dapat dicantumkan pengguna */
+      phone: "",
+      address: "",
+      education: "",
+      portfolio: "",
+      expectedPay: 0,
+      availability: "sesuai-jadwal",
+      workType: "",
+      cvName: "",
+      cvUrl: "",
+      cvData: "",
+      experiences: []
     };
+  }
+
+  /* Akun lama di localStorage mungkin belum punya kolom baru. */
+  function ensureProfile(user) {
+    if (!user) return user;
+    user.profile = Object.assign({}, defaultProfile(user.profile && user.profile.city), user.profile || {});
+    if (!Array.isArray(user.profile.experiences)) user.profile.experiences = [];
+    return user;
   }
 
   function persistUser() {
@@ -669,30 +690,106 @@
 
   function renderProfil() {
     const u = state.user;
-    const p = u.profile;
+    const p = ensureProfile(u).profile;
 
-    const head = '<div class="page-head"><h2>Profil</h2><p>Data ini dipakai untuk menghitung skor kecocokan.</p></div>';
+    const head = '<div class="page-head"><h2>Akun &amp; Profil</h2>' +
+      "<p>Lengkapi data kerja Anda agar rekomendasi lowongan lebih tepat.</p></div>";
+
+    const availabilityOptions = [
+      ["sesuai-jadwal", "Sesuai jadwal kuliah"],
+      ["setiap-hari", "Setiap hari"],
+      ["akhir-pekan", "Akhir pekan"],
+      ["pagi", "Shift pagi"],
+      ["sore", "Shift sore"],
+      ["remote", "Remote saja"]
+    ];
+    const availabilityLabel = (availabilityOptions.find(o => o[0] === p.availability) || ["", "Sesuai jadwal kuliah"])[1];
+
+    const cvInfo = p.cvData
+      ? '<a class="link" href="' + esc(p.cvData) + '" download="' + esc(p.cvName || "CV-Sifela") + '">Unduh CV</a>'
+      : (p.cvUrl
+          ? '<a class="link" href="' + esc(p.cvUrl) + '" target="_blank" rel="noopener">Buka tautan CV</a>'
+          : '<span class="muted-text">Belum ada CV</span>');
 
     const card = '<div class="panel">' +
       '<div class="profile-head">' +
         '<div class="profile-avatar">' + initials(u.name) + "</div>" +
         "<div><h2>" + esc(u.name) + "</h2><p>" + esc(u.email) + "</p></div>" +
       "</div>" +
-      '<label class="field"><span>Nama</span><input id="pf-name" value="' + esc(u.name) + '"></label>' +
-      '<label class="field"><span>Bio singkat</span><input id="pf-headline" placeholder="Misal: mahasiswa desain yang cari freelance" value="' + esc(p.headline || "") + '"></label>' +
-      '<label class="field"><span>Kampus / institusi</span><input id="pf-campus" placeholder="Nama kampus atau usaha" value="' + esc(p.campus || "") + '"></label>' +
-      '<label class="field"><span>Kota</span><select id="pf-city">' +
-        DATA.cities.map(c => '<option value="' + c.id + '"' + (c.id === p.city ? " selected" : "") + ">" + c.name + "</option>").join("") +
-      "</select></label>" +
-      '<label class="field"><span>Radius jangkauan (' + p.radius + " km)</span>" +
-        '<input type="range" id="pf-radius" min="1" max="' + (isPremium() ? MAX_RADIUS : FREE.maxRadius) +
-        '" value="' + p.radius + '">' +
-      "</label>" +
+      '<div class="form-grid">' +
+        '<label class="field"><span>Nama lengkap</span><input id="pf-name" value="' + esc(u.name) + '"></label>' +
+        '<label class="field"><span>Nomor telepon / WhatsApp</span><input id="pf-phone" type="tel" placeholder="Misal: 0812-3456-7890" value="' + esc(p.phone || "") + '"></label>' +
+        '<label class="field"><span>Alamat lengkap</span><input id="pf-address" placeholder="Jalan, nomor, kecamatan, kota" value="' + esc(p.address || "") + '"></label>' +
+        '<label class="field"><span>Bio singkat</span><input id="pf-headline" placeholder="Misal: mahasiswa desain yang cari freelance" value="' + esc(p.headline || "") + '"></label>' +
+        '<label class="field"><span>Kampus / institusi</span><input id="pf-campus" placeholder="Nama kampus atau usaha" value="' + esc(p.campus || "") + '"></label>' +
+        '<label class="field"><span>Pendidikan terakhir</span><input id="pf-education" placeholder="Misal: S1 Manajemen, semester 6" value="' + esc(p.education || "") + '"></label>' +
+        '<label class="field"><span>Kota</span><select id="pf-city">' +
+          DATA.cities.map(c => '<option value="' + c.id + '"' + (c.id === p.city ? " selected" : "") + ">" + c.name + "</option>").join("") +
+        "</select></label>" +
+        '<label class="field"><span>Ketersediaan</span><select id="pf-availability">' +
+          availabilityOptions.map(o => '<option value="' + o[0] + '"' + (o[0] === p.availability ? " selected" : "") + ">" + o[1] + "</option>").join("") +
+        "</select></label>" +
+        '<label class="field"><span>Jenis pekerjaan yang dicari</span><select id="pf-worktype">' +
+          '<option value="">Belum ditentukan</option>' +
+          DATA.types.map(t => '<option value="' + t.id + '"' + (p.workType === t.id ? " selected" : "") + ">" + esc(t.label) + "</option>").join("") +
+        "</select></label>" +
+        '<label class="field"><span>Target upah per jam (Rp)</span><input id="pf-pay" type="number" min="0" step="1000" placeholder="Misal: 25000" value="' + (p.expectedPay || "") + '"></label>' +
+        '<label class="field"><span>Portofolio / profil profesional</span><input id="pf-portfolio" type="url" placeholder="Tautan portfolio, LinkedIn, atau GitHub" value="' + esc(p.portfolio || "") + '"></label>' +
+        '<label class="field"><span>Tautan CV</span><input id="pf-cvurl" type="url" placeholder="Tautan Google Drive atau situs" value="' + esc(p.cvUrl || "") + '"></label>' +
+        '<label class="field"><span>Radius jangkauan (' + p.radius + " km)</span>" +
+          '<input type="range" id="pf-radius" min="1" max="' + (isPremium() ? MAX_RADIUS : FREE.maxRadius) +
+          '" value="' + p.radius + '">' +
+        "</label>" +
+      "</div>" +
+      '<div class="cv-block">' +
+        '<div><strong>Berkas CV</strong><p class="panel-sub">' +
+          (p.cvName ? "Tersimpan: " + esc(p.cvName) + " · " + cvInfo : "Unggah PDF atau gambar (maksimal 700 KB untuk prototipe).") +
+        "</p></div>" +
+        '<div class="cv-actions"><input type="file" id="pf-cv-file" accept=".pdf,.doc,.docx,image/*">' +
+          (p.cvName || p.cvData ? '<button class="btn btn-ghost btn-sm" id="pf-cv-clear">Hapus berkas</button>' : "") +
+        "</div>" +
+      "</div>" +
       '<button class="btn btn-primary" id="pf-save">Simpan perubahan</button>' +
     "</div>";
 
+    const baris = (label, value) => '<div class="summary-row"><span>' + label + "</span><b>" + value + "</b></div>";
+    const ringkasan = '<div class="panel"><h3>Ringkasan data kerja</h3>' +
+      '<p class="panel-sub">Data tersimpan berikut ikut dipertimbangkan saat mencari lowongan.</p>' +
+      '<div class="summary-grid">' +
+        baris("Telepon", esc(p.phone || "Belum diisi")) +
+        baris("Alamat", esc(p.address || "Belum diisi")) +
+        baris("Lokasi", esc(cityOf(p.city).name) + " · radius " + p.radius + " km") +
+        baris("Pendidikan", esc(p.education || p.campus || "Belum diisi")) +
+        baris("Target upah", p.expectedPay ? fmtRpFull(p.expectedPay) + "/jam" : "Belum diisi") +
+        baris("Ketersediaan", esc(availabilityLabel)) +
+        baris("CV", cvInfo) +
+        baris("Pengalaman", (p.experiences || []).length + " entri") +
+      "</div></div>";
+
+    const pengalamanRows = (p.experiences || []).map((e, i) =>
+      '<div class="exp-row">' +
+        '<div class="exp-row-head"><strong>Pengalaman ' + (i + 1) + "</strong>" +
+          '<button class="btn btn-ghost btn-sm" data-exp-remove="' + i + '">Hapus</button></div>' +
+        '<div class="form-grid">' +
+          '<label class="field"><span>Jabatan</span><input data-exp-index="' + i + '" data-exp-field="role" placeholder="Misal: Barista" value="' + esc(e.role || "") + '"></label>' +
+          '<label class="field"><span>Nama usaha / organisasi</span><input data-exp-index="' + i + '" data-exp-field="org" placeholder="Nama tempat kerja" value="' + esc(e.org || "") + '"></label>' +
+          '<label class="field"><span>Periode</span><input data-exp-index="' + i + '" data-exp-field="period" placeholder="Jan 2025 – Jun 2025" value="' + esc(e.period || "") + '"></label>' +
+          '<label class="field"><span>Jenis pekerjaan</span><select data-exp-index="' + i + '" data-exp-field="type">' +
+            '<option value="">Lainnya</option>' +
+            DATA.types.map(t => '<option value="' + t.id + '"' + (e.type === t.id ? " selected" : "") + ">" + esc(t.label) + "</option>").join("") +
+          "</select></label>" +
+        "</div>" +
+        '<label class="field"><span>Rincian tugas dan capaian</span><textarea rows="2" data-exp-index="' + i + '" data-exp-field="desc" placeholder="Jelaskan pekerjaan dan hasilnya">' + esc(e.desc || "") + "</textarea></label>" +
+      "</div>").join("");
+
+    const pengalaman = '<div class="panel"><h3>Pengalaman kerja</h3>' +
+      '<p class="panel-sub">Tambahkan riwayat pekerjaan, magang, atau proyek freelance yang pernah Anda jalani.</p>' +
+      (pengalamanRows || '<p class="muted-text">Belum ada pengalaman yang dicantumkan.</p>') +
+      '<button class="btn btn-outline btn-sm" id="pf-add-exp" style="margin-top:8px">+ Tambah pengalaman</button>' +
+      "</div>";
+
     const minat = '<div class="panel"><h3>Minat kategori</h3>' +
-      '<p class="panel-sub">Pilih yang kamu mau tekuni. Memengaruhi 20% skor.</p>' +
+      '<p class="panel-sub">Pilih yang Anda minati. Memengaruhi 20% skor.</p>' +
       '<div class="skill-grid">' + DATA.categories.map(c =>
         '<button class="chip' + (p.interests.includes(c.id) ? " active" : "") + '" data-pf-cat="' + c.id + '">' +
         c.icon + " " + c.label + "</button>").join("") + "</div></div>";
@@ -721,7 +818,7 @@
         '<button class="btn btn-outline btn-sm" id="pf-logout">Keluar</button>' +
       "</div></div>";
 
-    $("#app-main").innerHTML = head + card + minat + skill + jadwal + akun;
+    $("#app-main").innerHTML = head + card + ringkasan + pengalaman + minat + skill + jadwal + akun;
   }
 
   function renderPremium() {
@@ -1410,7 +1507,7 @@
     const u = users[email.toLowerCase().trim()];
     if (!u) return "Email belum terdaftar.";
     if (u.pass !== hashPass(password)) return "Kata sandi salah.";
-    state.user = u;
+    state.user = ensureProfile(u);
     sessionLogin(u.email);
     return null;
   }
@@ -1463,7 +1560,24 @@
           radius: kind === "premium" ? 25 : 10,
           onboarded: true,
           headline: kind === "mitra" ? "Pemilik usaha kopi & kafe" : "Mahasiswa yang cari pengalaman",
-          campus: "Universitas Brawijaya"
+          campus: "Universitas Brawijaya",
+          phone: "0812-3456-7890",
+          address: "Jl. Gatot Subroto No. 12, Bandung",
+          education: "S1 Manajemen, semester 6",
+          portfolio: "https://www.linkedin.com/in/contoh-sifela",
+          expectedPay: 25000,
+          availability: "sesuai-jadwal",
+          workType: "fnb",
+          cvName: "CV-Contoh-Sifela.pdf",
+          cvUrl: "",
+          cvData: "",
+          experiences: [{
+            role: "Barista magang",
+            org: "Kopi Senja",
+            period: "Jan 2025 – Apr 2025",
+            type: "fnb",
+            desc: "Menyiapkan minuman dan melayani pelanggan pada shift pagi."
+          }]
         },
         plan: kind === "premium"
           ? { type: "plus", until: Date.now() + 30 * 864e5, plan: "bulanan" }
@@ -1477,7 +1591,7 @@
 
     // Normalisasi paket tiap kali tombol demo dipakai, supaya akun demo
     // tidak "terlanjur" Plus setelah mencoba alur checkout.
-    const user = users[email];
+    const user = ensureProfile(users[email]);
     if (kind === "premium") {
       const stillActive = user.plan && user.plan.type === "plus" && user.plan.until > Date.now();
       if (!stillActive) user.plan = { type: "plus", until: Date.now() + 30 * 864e5, plan: "bulanan" };
@@ -1674,18 +1788,49 @@
         persistUser(); renderProfil(); return;
       }
 
+      const addExp = t.closest("#pf-add-exp");
+      if (addExp) {
+        state.user.profile.experiences.push({ role: "", org: "", period: "", type: "", desc: "" });
+        persistUser(); renderProfil(); return;
+      }
+
+      const removeExp = t.closest("[data-exp-remove]");
+      if (removeExp) {
+        state.user.profile.experiences.splice(Number(removeExp.dataset.expRemove), 1);
+        persistUser(); renderProfil(); toast("Pengalaman dihapus.");
+        return;
+      }
+
+      if (t.closest("#pf-cv-clear")) {
+        state.user.profile.cvName = "";
+        state.user.profile.cvUrl = "";
+        state.user.profile.cvData = "";
+        persistUser(); renderProfil(); toast("Berkas CV dihapus.");
+        return;
+      }
+
       if (t.closest("#pf-save")) {
-        const name = $("#pf-name").value.trim();
+        const val = (id) => $("#" + id) ? $("#" + id).value.trim() : "";
+        const name = val("pf-name");
         if (name) state.user.name = name;
-        state.user.profile.headline = $("#pf-headline").value.trim();
-        state.user.profile.campus = $("#pf-campus").value.trim();
-        state.user.profile.city = $("#pf-city").value;
-        const r = Number($("#pf-radius").value);
-        state.user.profile.radius = r;
+        const p = state.user.profile;
+        p.phone = val("pf-phone");
+        p.address = val("pf-address");
+        p.headline = val("pf-headline");
+        p.campus = val("pf-campus");
+        p.education = val("pf-education");
+        p.city = val("pf-city");
+        p.availability = val("pf-availability") || "sesuai-jadwal";
+        p.workType = val("pf-worktype");
+        p.expectedPay = Number(val("pf-pay")) || 0;
+        p.portfolio = val("pf-portfolio");
+        p.cvUrl = val("pf-cvurl");
+        p.radius = Number(val("pf-radius")) || p.radius;
         persistUser();
-        state.filters.city = state.user.profile.city;
+        state.filters.city = p.city;
+        state.filters.radius = Math.min(p.radius, isPremium() ? MAX_RADIUS : FREE.maxRadius);
         renderSidebar(); renderApp();
-        toast("Profil disimpan", "ok");
+        toast("Data profil berhasil disimpan.", "ok");
         return;
       }
 
@@ -1707,6 +1852,29 @@
       if (t.id === "sort-select") {
         state.filters.sort = t.value;
         renderApp();
+        return;
+      }
+
+      if (t.dataset && t.dataset.expField) {
+        updateExperienceField(t);
+        return;
+      }
+
+      if (t.id === "pf-cv-file") {
+        const file = t.files && t.files[0];
+        if (!file) return;
+        if (file.size > 700 * 1024) {
+          toast("Berkas terlalu besar. Gunakan file di bawah 700 KB.", "warn");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          state.user.profile.cvName = file.name;
+          state.user.profile.cvData = String(reader.result || "");
+          persistUser(); renderProfil();
+          toast("CV berhasil disimpan di profil.", "ok");
+        };
+        reader.readAsDataURL(file);
       }
     });
 
@@ -1715,7 +1883,9 @@
       if (t.id === "pf-radius") {
         const label = t.parentElement.querySelector("span");
         if (label) label.textContent = "Radius jangkauan (" + t.value + " km)";
+        return;
       }
+      if (t.dataset && t.dataset.expField) updateExperienceField(t);
     });
 
     // forms
@@ -1758,6 +1928,16 @@
     if (i >= 0) arr.splice(i, 1); else arr.push(val);
   }
 
+  /* Input pengalaman langsung tersimpan supaya tidak hilang
+     ketika panel profil dirender ulang. */
+  function updateExperienceField(el) {
+    const index = Number(el.dataset.expIndex);
+    const item = state.user.profile.experiences[index];
+    if (!item) return;
+    item[el.dataset.expField] = el.value;
+    persistUser();
+  }
+
   /* ============================================================
      INIT
      ============================================================ */
@@ -1789,7 +1969,8 @@
     if (email) {
       const users = loadUsers();
       if (users[email]) {
-        state.user = users[email];
+        state.user = ensureProfile(users[email]);
+        persistUser();
         enterApp();
         return;
       }

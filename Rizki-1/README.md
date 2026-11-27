@@ -19,7 +19,10 @@ konsep kerja paruh waktu fleksibel:
 - Pencarian + filter (kategori, tipe kerja, hari, upah) dan 4 mode pengurutan
 - Rekomendasi dengan skor 4 faktor (skill 40%, minat 20%, jadwal 20%, jarak 20%)
 - Filter wilayah & radius (Gratis 10 km, Plus 50 km)
+- Tema gelap navy konsisten di semua halaman (depan, aplikasi, autentikasi, pembayaran, modal, dan notifikasi)
 - Homepage bergelap empat menu (Beranda, Akun & Profil, Untuk Perusahaan, Cari Lowongan) dengan paket dan harga tetap di halaman depan
+- Navigasi aplikasi dapat kembali ke Beranda lewat logo Sifela atau item Beranda; tersedia Akun & Profil serta Untuk Perusahaan
+- Profil kerja menyimpan CV, alamat, telepon, pendidikan, target upah, portofolio, ketersediaan, dan riwayat pengalaman kerja
 - Pencarian dapat dibuka tanpa akun (akun tamu); fitur berbayar dibatasi (6 lowongan, 3 lamaran/bulan, skor detail, chat)
 - Tombol Sifela Plus di homepage langsung menuju halaman pembayaran (simulasi QRIS / e-wallet / transfer)
 - Sisi mitra: pasang lowongan gratis (2 aktif), upgrade Mitra Pro untuk penonjolan & statistik

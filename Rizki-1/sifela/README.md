@@ -74,6 +74,18 @@ Menu **Cari Lowongan** langsung membuka hasil pencarian. Tanpa sesi, aplikasi me
 tamu sementara (data tidak tersimpan sebagai akun tetap). Untuk menyimpan profil dan lamaran,
 daftar atau masuk melalui menu **Akun & Profil**.
 
+Tema gelap navy dipakai konsisten di halaman depan, pembayaran, pencarian, rekomendasi,
+lamaran, profil, ruang mitra, autentikasi, modal, dan notifikasi. Bilah navigasi aplikasi
+memuat **Beranda**, **Cari Lowongan**, **Rekomendasi**, **Lamaran**, **Akun & Profil**,
+**Untuk Perusahaan**, dan **Plus**. Logo Sifela maupun item **Beranda** kembali ke halaman
+depan; halaman pembayaran juga memuat tautan balik yang sama.
+
+Halaman **Akun & Profil** dapat menyimpan data kerja: nama, telepon/WhatsApp, alamat,
+bio singkat, kampus, pendidikan terakhir, kota, radius, ketersediaan, jenis pekerjaan,
+target upah per jam, portofolio, tautan CV, berkas CV (maksimal 700 KB disimpan sebagai
+data URL), serta riwayat pengalaman kerja (jabatan, organisasi, periode, jenis pekerjaan,
+dan rincian tugas). Ringkasan data tersimpan ditampilkan langsung di halaman yang sama.
+
 ### Matriks fitur
 
 | Fitur | Gratis | Plus |

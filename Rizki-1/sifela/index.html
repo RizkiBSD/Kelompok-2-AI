@@ -6,7 +6,7 @@
 <title>Sifela.id — Pekerjaan fleksibel untuk mahasiswa dan mitra usaha</title>
 <meta name="description" content="Sifela.id: pusat informasi pekerjaan paruh waktu berbasis shift, proyek freelance kecil, dan pekerjaan harian. Cari lowongan sesuai jadwal dan wilayah, atau pasang lowongan usaha tanpa biaya.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%234f46e5'/><text y='72' x='50' font-size='58' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>S</text></svg>">
-<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/styles.css?v=12">
 </head>
 <body>
 
@@ -414,7 +414,7 @@
 <!-- ============ APP ============ -->
 <div id="view-app" class="view hidden">
   <header class="appbar">
-    <button class="brand brand-btn" data-app-nav="cari">
+    <button class="brand brand-btn" data-go="landing" title="Kembali ke Beranda">
       <span class="brand-mark">S</span>
       <span class="brand-text">Sifela.id</span>
     </button>
@@ -425,10 +425,12 @@
     </div>
 
     <nav class="appnav">
+      <button class="appnav-item" data-go="landing">Beranda</button>
       <button class="appnav-item active" data-app-nav="cari">Cari Lowongan</button>
       <button class="appnav-item" data-app-nav="rekomendasi">Rekomendasi</button>
       <button class="appnav-item" data-app-nav="lamaran">Lamaran</button>
-      <button class="appnav-item" data-app-nav="mitra">Mitra</button>
+      <button class="appnav-item" data-app-nav="profil">Akun &amp; Profil</button>
+      <button class="appnav-item" data-app-nav="mitra">Untuk Perusahaan</button>
       <button class="appnav-item" data-app-nav="premium">Plus</button>
     </nav>
 
@@ -525,7 +527,7 @@
 
 <div id="toast-root" class="toast-root"></div>
 
-<script src="assets/data.js?v=11"></script>
-<script src="assets/app.js?v=11"></script>
+<script src="assets/data.js?v=12"></script>
+<script src="assets/app.js?v=12"></script>
 </body>
 </html>
