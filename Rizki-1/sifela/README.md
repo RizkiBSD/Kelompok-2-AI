@@ -170,7 +170,14 @@ Konfigurasi sudah ada di [`vercel.json`](vercel.json):
 - **Output Directory:** `dist`
 
 Tambahkan `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` sebagai environment
-variables di Vercel, lalu deploy ulang setelah perubahan kode atau `vercel.json`.
+variables di Vercel (Project Settings → Environment Variables), lalu deploy ulang
+setelah perubahan kode atau `vercel.json`.
+
+Sebagai cadangan agar deploy otomatis tetap berjalan tanpa konfigurasi dashboard,
+`assets/supabase.js` memiliki nilai default untuk URL dan anon key proyek ini.
+Keduanya adalah data publik dan aksesnya tetap dibatasi RLS. Nilai dari environment
+variable selalu didahulukan daripada nilai default. Jangan pernah
+menyimpan service role key atau DB password di kode, `vercel.json`, atau `.env`.
 
 ---
 
