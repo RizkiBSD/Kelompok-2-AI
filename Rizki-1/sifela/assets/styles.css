@@ -454,16 +454,6 @@ button { font-family: inherit; cursor: pointer; }
 }
 .form-alt { font-size: 13px; color: var(--muted); text-align: center; margin-top: 16px; }
 
-.demo-box {
-  margin-top: 26px;
-  border: 1px dashed rgba(30, 58, 138, .32);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  background: rgba(255, 255, 255, .55);
-}
-.demo-box strong { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-.demo-btns { display: flex; gap: 8px; margin-top: 10px; }
-
 /* ============================================================
    APP SHELL
    ============================================================ */
@@ -1057,15 +1047,6 @@ button { font-family: inherit; cursor: pointer; }
 }
 .pay-method .pm-ico { font-size: 18px; }
 .pay-method.selected { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(30, 58, 138, .12); }
-.demo-note {
-  font-size: 11.5px;
-  color: #1e3a8a;
-  background: var(--gold-soft);
-  border: 1px solid #c7d5e8;
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  margin-bottom: 14px;
-}
 
 /* job detail modal */
 .jd-head { display: flex; gap: 14px; margin-bottom: 16px; }
@@ -1082,8 +1063,6 @@ button { font-family: inherit; cursor: pointer; }
 .jd-cell span { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 .jd-cell b { font-size: 13.5px; }
 .jd-desc { font-size: 13.5px; color: var(--ink-2); margin-bottom: 16px; white-space: pre-line; }
-.source-link { display: inline-block; font-size: 13px; font-weight: 700; color: var(--brand); text-decoration: none; margin-bottom: 16px; }
-.source-link:hover { text-decoration: underline; }
 .jd-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* onboarding */
@@ -1520,16 +1499,150 @@ button { font-family: inherit; cursor: pointer; }
   border-color: var(--line);
   color: #1e40af;
 }
-#view-payment .demo-note {
-  background: rgba(30, 58, 138, .12);
-  border-color: rgba(30, 58, 138, .35);
-  color: #1e3a8a;
-}
 #view-payment .success-card > p { color: #1e40af; }
 #view-payment .success-ico { background: rgba(30, 58, 138, .16); }
 #view-payment .success-chip {
   background: linear-gradient(105deg, #1e3a8a, #172554);
   color: #fff;
+}
+
+/* ============================================================
+   BERANDA — pencarian cepat, bidang, dan lowongan terbaru
+   ============================================================ */
+.hero-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 660px;
+  margin-top: 26px;
+  padding: 6px 6px 6px 16px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.hero-search .hs-ico { font-size: 15px; line-height: 1; }
+.hero-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+}
+.hero-search input::placeholder { color: #64748b; }
+.hero-search select {
+  max-width: 150px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: 0;
+  cursor: pointer;
+}
+.hero-search .btn { white-space: nowrap; padding: 10px 18px; }
+
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+.cat-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 20px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.cat-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(30, 58, 138, .45);
+  box-shadow: var(--shadow);
+}
+.cat-tile .cat-ico {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  font-size: 20px;
+}
+.cat-tile strong { font-size: 14px; color: var(--ink); }
+.cat-tile .cat-count { font-size: 12px; color: var(--muted); }
+
+.landing-jobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.lj-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.lj-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(30, 58, 138, .45);
+  box-shadow: var(--shadow);
+}
+.lj-logo {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  font-size: 20px;
+}
+.lj-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.lj-body strong { font-size: 15px; color: var(--ink); }
+.lj-org, .lj-meta { font-size: 12px; color: var(--muted); }
+.lj-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; white-space: nowrap; }
+.lj-side b { font-size: 14px; color: var(--ink); }
+.lj-side small { font-size: 11px; color: var(--muted); }
+.lj-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); }
+
+#view-landing .hero-search input,
+#view-landing .hero-search select { color: #0f172a; }
+#view-landing .hero-search select option { color: #0f172a; }
+#view-landing .cat-tile strong,
+#view-landing .lj-body strong,
+#view-landing .lj-side b { color: #0f172a; }
+#view-landing .cat-count,
+#view-landing .lj-org,
+#view-landing .lj-meta,
+#view-landing .lj-side small { color: #1e40af; }
+
+.check-note {
+  font-size: 11.5px;
+  color: #1e3a8a;
+  background: rgba(30, 58, 138, .12);
+  border: 1px solid rgba(30, 58, 138, .35);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  margin-bottom: 14px;
 }
 
 /* ============================================================
@@ -1545,6 +1658,7 @@ button { font-family: inherit; cursor: pointer; }
   .hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .hero-card { transform: none; max-width: 460px; }
   .feature-grid { grid-template-columns: repeat(2, 1fr); }
+  .cat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .app-body { grid-template-columns: 1fr; }
   .sidebar {
     position: static;
@@ -1573,6 +1687,11 @@ button { font-family: inherit; cursor: pointer; }
   .landing-links { display: none; }
   .hero { padding: 44px 0; }
   .hero-stats { gap: 24px; }
+  .hero-search { flex-wrap: wrap; padding: 12px; }
+  .hero-search input { flex-basis: 100%; padding: 6px 2px; }
+  .hero-search select { max-width: none; flex: 1; border-left: 0; border-top: 1px solid var(--line); }
+  .hero-search .btn { flex: 1; }
+  .cat-grid, .landing-jobs { grid-template-columns: 1fr; }
   .feature-grid, .steps { grid-template-columns: 1fr; }
   .price-grid { grid-template-columns: 1fr; }
   .sidebar { grid-template-columns: 1fr; }

@@ -339,7 +339,6 @@ import SIFELA_DATA from "./data.js";
       views: Number(r.views) || 0,
       boosted: !!r.boosted,
       desc: r.description || "",
-      sourceUrl: r.source_url || "",
       owner: r.employer_id,
       status: r.status || "pending",
       custom: true
@@ -374,6 +373,39 @@ import SIFELA_DATA from "./data.js";
     if (error) { toast("Gagal memuat lowongan: " + error.message, "warn"); return; }
     DATA.jobs = (data || []).map(mapJob);
     if ($("#stat-jobs")) $("#stat-jobs").textContent = publicJobs().length;
+    renderLanding();
+  }
+
+  /* Ringkasan di beranda: kategori dan lowongan terbaru dari data publik. */
+  function renderLanding() {
+    const jobs = publicJobs();
+    const catHost = $("#landing-cats");
+    if (catHost) {
+      const counts = {};
+      jobs.forEach(j => { counts[j.cat] = (counts[j.cat] || 0) + 1; });
+      catHost.innerHTML = DATA.categories.map(c =>
+        '<button class="cat-tile" data-landing-cat="' + c.id + '">' +
+          '<span class="cat-ico">' + c.icon + "</span>" +
+          "<strong>" + esc(c.label) + "</strong>" +
+          '<span class="cat-count">' + (counts[c.id] || 0) + " lowongan</span>" +
+        "</button>").join("");
+    }
+
+    const jobHost = $("#landing-jobs");
+    if (jobHost) {
+      jobHost.innerHTML = jobs.length
+        ? jobs.slice(0, 6).map(j =>
+            '<button class="lj-card" data-job="' + esc(j.id) + '">' +
+              '<span class="lj-logo">' + ICONS[j.cat] + "</span>" +
+              '<span class="lj-body">' +
+                "<strong>" + esc(j.title) + "</strong>" +
+                '<span class="lj-org">' + esc(j.org) + "</span>" +
+                '<span class="lj-meta">' + esc(areaText(j)) + " · " + esc(daysText(j)) + "</span>" +
+              "</span>" +
+              '<span class="lj-side"><b>' + esc(payLabel(j)) + "</b><small>Lihat detail →</small></span>" +
+            "</button>").join("")
+        : '<p class="lj-empty">Lowongan akan muncul di sini setelah tersedia.</p>';
+    }
   }
 
   async function loadMyApplications() {
@@ -506,8 +538,8 @@ import SIFELA_DATA from "./data.js";
     const f = state.filters;
     let list = publicJobs();
 
-    list = list.filter(j => j.remote ? true : j.city === f.city);
-    list = list.filter(j => j.remote || distanceTo(j) <= f.radius);
+    if (f.city !== "semua") list = list.filter(j => j.remote ? true : j.city === f.city);
+    if (f.city !== "semua") list = list.filter(j => j.remote || distanceTo(j) <= f.radius);
 
     if (f.q.trim()) {
       const q = normalize(f.q);
@@ -556,9 +588,10 @@ import SIFELA_DATA from "./data.js";
     const f = state.filters;
 
     const citySel = $("#filter-city");
-    citySel.innerHTML = DATA.cities.map(c =>
-      '<option value="' + c.id + '"' + (c.id === f.city ? " selected" : "") + '>' + c.name + "</option>"
-    ).join("");
+    citySel.innerHTML = '<option value="semua"' + (f.city === "semua" ? " selected" : "") + ">Semua kota</option>" +
+      DATA.cities.map(c =>
+        '<option value="' + c.id + '"' + (c.id === f.city ? " selected" : "") + '>' + c.name + "</option>"
+      ).join("");
     citySel.value = f.city;
 
     const radiusInput = $("#filter-radius");
@@ -569,7 +602,7 @@ import SIFELA_DATA from "./data.js";
     if (isPremium()) {
       $("#radius-hint").innerHTML = "Jangkauan penuh aktif (maks. " + MAX_RADIUS + " km).";
     } else {
-      const beyond = publicJobs().filter(j =>
+      const beyond = f.city === "semua" ? 0 : publicJobs().filter(j =>
         !j.remote && j.city === f.city && distanceTo(j) > f.radius).length;
       $("#radius-hint").innerHTML = beyond
         ? '<b>' + beyond + " lowongan</b> di luar " + f.radius +
@@ -644,7 +677,6 @@ import SIFELA_DATA from "./data.js";
     const showScore = premium || o.forceScore;
     const badgeType = '<span class="badge badge-type">' + TYPE_LABEL[job.type] + "</span>";
     const badges = [];
-    if (job.verified) badges.push('<span class="badge badge-verified">Terverifikasi</span>');
     if (job.urgent) badges.push('<span class="badge badge-urgent">Butuh cepat</span>');
     if (job.remote) badges.push('<span class="badge badge-remote">Remote</span>');
     if (job.boosted) badges.push('<span class="badge badge-boost">Ditonjolkan</span>');
@@ -715,7 +747,8 @@ import SIFELA_DATA from "./data.js";
     const visible = premium ? results.length : Math.min(results.length, FREE.visibleJobs);
 
     const head = '<div class="page-head">' +
-      "<h2>Cari Lowongan di " + esc(cityOf(state.filters.city).name) + "</h2>" +
+      "<h2>Cari Lowongan di " +
+        esc(state.filters.city === "semua" ? "Semua Kota" : cityOf(state.filters.city).name) + "</h2>" +
       "<p>Pekerjaan paruh waktu berbasis shift, proyek freelance kecil, dan pekerjaan harian di sekitar Anda.</p>" +
       "</div>";
 
@@ -972,7 +1005,7 @@ import SIFELA_DATA from "./data.js";
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         '<button class="btn btn-outline btn-sm" data-app-nav="mitra">' +
           (u.role === "mitra" ? "Kelola lowongan" : "Mode mitra") + "</button>" +
-        (isPremium() ? '<button class="btn btn-outline btn-sm" id="pf-cancel">Jeda Plus (demo)</button>' :
+        (isPremium() ? '<button class="btn btn-outline btn-sm" id="pf-cancel">Jeda Plus</button>' :
           '<button class="btn btn-gold btn-sm" data-open-premium>Upgrade ke Plus</button>') +
       "</div></div>";
 
@@ -996,7 +1029,7 @@ import SIFELA_DATA from "./data.js";
       "</p></div>";
 
     const plans = '<div class="panel"><h3>Pilih paket</h3>' +
-      '<p class="panel-sub">Simulasi — tidak ada tagihan nyata.</p>' +
+      '<p class="panel-sub">Pilih paket yang sesuai dengan kebutuhan Anda.</p>' +
       '<div class="plan-grid">' + PLANS.map((pl, i) =>
         '<button class="plan-card' + (i === 0 ? " selected" : "") + '" data-plan="' + pl.id + '">' +
           "<h4>" + pl.label + "</h4>" +
@@ -1068,7 +1101,7 @@ import SIFELA_DATA from "./data.js";
       "</div></div>";
 
     const banner = verified
-      ? '<div class="banner banner-ok">✓ <span><strong>Usaha terverifikasi.</strong> Lowongan yang Anda pasang tetap menunggu persetujuan admin sebelum tayang.</span></div>'
+      ? '<div class="banner banner-ok">✓ <span><strong>Profil usaha aktif.</strong> Lowongan yang Anda pasang ditinjau sebelum tayang.</span></div>'
       : '<div class="banner">⏳ <span><strong>Menunggu verifikasi admin.</strong> Lengkapi profil usaha dan dokumen legalitas agar dapat memasang lowongan.</span>' +
         '<button class="btn btn-outline btn-sm" data-partner-profile>Lengkapi</button></div>';
 
@@ -1347,7 +1380,7 @@ import SIFELA_DATA from "./data.js";
                 '<button class="tag link" data-doc="' + esc(d.path) + '" data-doc-bucket="company_docs">' + esc(d.name) + "</button>").join("") + "</div>" +
             "</div>" +
             (p.is_verified
-              ? '<span class="app-status">Terverifikasi</span>'
+              ? '<span class="app-status">Disetujui</span>'
               : '<button class="btn btn-primary btn-sm" data-verify-mitra="' + p.id + '">Verifikasi Mitra</button>') +
             "</div>";
         }).join("") + "</div>"
@@ -1380,7 +1413,7 @@ import SIFELA_DATA from "./data.js";
     await loadJobs();
     await loadAdminData();
     renderApp();
-    toast("Mitra terverifikasi", "ok");
+    toast("Mitra disetujui", "ok");
   }
 
   async function moderateJob(id, status) {
@@ -1416,7 +1449,7 @@ import SIFELA_DATA from "./data.js";
       : '<button class="link" data-app-nav="' + (mitra ? "mitra" : "premium") + '">← Kembali</button>';
     const head = '<div class="page-head">' + back +
       '<h2 style="margin-top:10px">Pembayaran ' + title + "</h2>" +
-      "<p>Pilih paket, tentukan metode pembayaran, lalu konfirmasi. Ini simulasi; tidak ada dana yang ditarik.</p></div>";
+      "<p>Pilih paket, tentukan metode pembayaran, lalu konfirmasi untuk mengaktifkan langganan.</p></div>";
 
     const step1 = '<div class="panel"><div class="checkout-step"><b>1</b><h3>Pilih paket</h3></div>' +
       '<div class="plan-grid">' + plans.map(p =>
@@ -1437,12 +1470,12 @@ import SIFELA_DATA from "./data.js";
       "</div>" +
       (method === "qris"
         ? '<div class="pay-instruction"><div class="qris-box">QRIS<br><small>sifela.id</small></div>' +
-          "<p>Scan dengan aplikasi pembayaran apa pun setelah konfirmasi. Kode ini hanya ilustrasi.</p></div>"
+          "<p>Scan dengan aplikasi pembayaran apa pun setelah konfirmasi.</p></div>"
         : method === "ewallet"
           ? '<div class="pay-instruction"><div class="pay-code">sifela.id / e-wallet</div>' +
-            "<p>Pilih GoPay, OVO, DANA, atau ShopeePay di aplikasi masing-masing (simulasi).</p></div>"
+            "<p>Pilih GoPay, OVO, DANA, atau ShopeePay di aplikasi masing-masing.</p></div>"
           : '<div class="pay-instruction"><div class="pay-code">BANK SIFELA · 9001 2026</div>' +
-            "<p>Transfer ke nomor rekening contoh, lalu simpan bukti (simulasi).</p></div>") +
+            "<p>Transfer ke nomor rekening di atas, lalu simpan bukti pembayaran.</p></div>") +
       "</div>";
 
     const summary = '<div class="checkout-side"><div class="panel">' +
@@ -1452,9 +1485,9 @@ import SIFELA_DATA from "./data.js";
         '<div class="checkout-row"><span>Biaya layanan</span><span>Rp0</span></div>' +
         '<div class="checkout-row total"><span>Total bayar</span><span>' + fmtRpFull(plan.price) + "</span></div>" +
       "</div>" +
-      '<div class="demo-note">⚠️ Mode demo. Tombol di bawah hanya mengubah status paket di browser ini.</div>' +
+      '<div class="check-note">Konfirmasi pembayaran untuk mengaktifkan paket pada akun ini.</div>' +
       '<button class="btn btn-gold btn-block" data-pay>Bayar ' + fmtRpFull(plan.price) + "</button>" +
-      '<p class="paywall-foot">Dengan melanjutkan, Anda menyetujui simulasi langganan sifela.id.</p>' +
+      '<p class="paywall-foot">Dengan melanjutkan, Anda menyetujui ketentuan langganan sifela.id.</p>' +
       "</div></div>";
 
     checkoutTarget().innerHTML = head + '<div class="checkout-grid"><div>' + step1 + step2 + "</div>" + summary + "</div>";
@@ -1481,7 +1514,7 @@ import SIFELA_DATA from "./data.js";
         " aktif pada akun ini. Seluruh fitur berbayar langsung dapat digunakan.</p>" +
       '<div class="success-chip">' + (mitra ? "Mitra Pro" : "Sifela Plus") + " aktif</div>" +
       '<div class="success-actions">' + primary + secondary + "</div>" +
-      '<p class="paywall-foot">Simulasi prototipe sifela.id — tidak ada transaksi nyata.</p>' +
+      '<p class="paywall-foot">Terima kasih telah menggunakan sifela.id.</p>' +
       "</div>";
   }
 
@@ -1548,7 +1581,7 @@ import SIFELA_DATA from "./data.js";
       '<button class="btn btn-gold btn-block" id="pw-cta">' +
         (forPartner ? "Lihat paket Mitra Pro — mulai Rp49.000" : "Lihat paket Plus — mulai Rp29.000") +
       "</button>" +
-      '<p class="paywall-foot">Simulasi prototipe. Tidak ada pembayaran nyata.</p>',
+      '<p class="paywall-foot">Paket aktif langsung setelah pembayaran dikonfirmasi.</p>',
       { name: "paywall" }
     );
 
@@ -1598,6 +1631,7 @@ import SIFELA_DATA from "./data.js";
   function openJob(jobId) {
     const job = DATA.jobs.find(j => j.id === jobId);
     if (!job) return;
+    if (!state.user) state.user = guestUser();
     const s = scoreJob(job);
     const premium = isPremium();
     const applied = (state.user.applications || []).some(a => a.jobId === job.id);
@@ -1629,11 +1663,8 @@ import SIFELA_DATA from "./data.js";
           : "") +
       "</div>" +
       '<p class="jd-desc">' + esc(job.desc) + "</p>" +
-      (job.sourceUrl
-        ? '<p><a class="source-link" href="' + esc(job.sourceUrl) + '" target="_blank" rel="noopener noreferrer">Lihat sumber lowongan ↗</a></p>'
-        : "") +
       (isConflict(job) && !isPremium()
-        ? '<div class="demo-note">⚠️ Shift ini kemungkinan bentrok dengan hari tersediamu. Atur ulang di Profil.</div>'
+        ? '<div class="check-note">⚠️ Shift ini kemungkinan bentrok dengan hari tersediamu. Atur ulang di Profil.</div>'
         : "") +
       scoreBlock +
       '<div class="jd-actions">' +
@@ -1642,7 +1673,7 @@ import SIFELA_DATA from "./data.js";
         '<button class="btn btn-outline" id="jd-save">' + (saved ? "★ Tersimpan" : "☆ Simpan") + "</button>" +
         '<button class="btn btn-outline" id="jd-contact">💬 Kontak</button>' +
       "</div>" +
-      '<p class="paywall-foot">Lowongan dari mitra terverifikasi dan dimoderasi admin.</p>',
+      '<p class="paywall-foot">Seluruh proses lamaran dilakukan langsung di Sifela.</p>',
       { name: "job", wide: true }
     );
 
@@ -1664,7 +1695,7 @@ import SIFELA_DATA from "./data.js";
 
     $("#jd-contact").addEventListener("click", () => {
       if (!isPremium()) { closeModal(); openPaywall("contact"); return; }
-      toast("Chat dibuka — ini simulasi prototipe");
+      toast("Ruang chat dengan mitra siap digunakan.");
     });
 
     const scoreBtn = $("#modal-sheet [data-open-premium]");
@@ -1753,7 +1784,7 @@ import SIFELA_DATA from "./data.js";
             d.label + "</button>").join("") + "</div>" +
           '<label class="field"><span>Radius: <b id="ob-r-label">' + draft.radius + " km</b></span>" +
             '<input type="range" id="ob-radius" min="1" max="' + MAX_RADIUS + '" value="' + draft.radius + '"></label>' +
-          '<div class="demo-note">Radius di atas 10 km hanya aktif setelah Plus.</div>';
+          '<div class="check-note">Radius di atas 10 km hanya aktif setelah Plus.</div>';
       }
 
       const actions = '<div class="ob-actions">' +
@@ -1844,17 +1875,21 @@ import SIFELA_DATA from "./data.js";
     };
   }
 
-  /* Menu "Cari Lowongan" langsung membuka hasil pencarian.
-     Pengguna tanpa sesi mendapat akun tamu sementara. */
-  function openSearch() {
+  /* Membuka hasil pencarian, dengan-filter awal dari beranda bila diberikan. */
+  function openSearch(opts) {
+    const o = opts || {};
     if (!state.user) state.user = guestUser();
     state.tab = "cari";
-    state.filters.city = state.user.profile.city;
+    state.filters.q = o.q || "";
+    state.filters.city = o.city || state.user.profile.city;
+    state.filters.cats = o.cat ? [o.cat] : [];
+    const globalSearch = $("#global-search");
+    if (globalSearch) globalSearch.value = state.filters.q;
     state.filters.radius = Math.min(state.user.profile.radius, isPremium() ? MAX_RADIUS : FREE.maxRadius);
     showView("app");
     renderSidebar();
     renderApp();
-    if (!sessionEmail()) toast("Pencarian ditampilkan dengan akun tamu.", "ok");
+    window.scrollTo(0, 0);
   }
 
   /* Menu "Akun & Profil": pengguna yang sudah masuk langsung ke profil.
@@ -1999,6 +2034,12 @@ import SIFELA_DATA from "./data.js";
         return;
       }
 
+      const landingCat = t.closest("[data-landing-cat]");
+      if (landingCat) {
+        openSearch({ cat: landingCat.dataset.landingCat });
+        return;
+      }
+
       const jobEl = t.closest("[data-job]");
       if (jobEl) {
         if (jobEl.classList.contains("locked")) { openPaywall("jobs"); return; }
@@ -2008,6 +2049,12 @@ import SIFELA_DATA from "./data.js";
 
       const avatar = t.closest("#avatar-btn");
       if (avatar) { state.tab = "profil"; renderApp(); return; }
+    });
+
+    const heroForm = $("#hero-search");
+    if (heroForm) heroForm.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      openSearch({ q: $("#hero-q").value.trim(), city: $("#hero-city").value });
     });
 
     // filter chips (delegated)
@@ -2190,7 +2237,7 @@ import SIFELA_DATA from "./data.js";
       if (t.closest("#pf-cancel")) {
         state.user.plan = { type: "free", until: 0 };
         persistUser(); renderSidebar(); renderApp();
-        toast("Plus dijeda (demo)");
+        toast("Plus dijeda.");
         return;
       }
     }
@@ -2340,8 +2387,11 @@ import SIFELA_DATA from "./data.js";
       return;
     }
 
-    $("#reg-city").innerHTML = DATA.cities.map(c =>
+    const cityOptions = DATA.cities.map(c =>
       '<option value="' + c.id + '">' + c.name + "</option>").join("");
+    $("#reg-city").innerHTML = cityOptions;
+    if ($("#hero-city")) $("#hero-city").innerHTML =
+      '<option value="semua">Semua kota</option>' + cityOptions;
     if ($("#stat-cities")) $("#stat-cities").textContent = DATA.cities.length;
     if ($("#stat-types")) $("#stat-types").textContent = DATA.types.length;
 

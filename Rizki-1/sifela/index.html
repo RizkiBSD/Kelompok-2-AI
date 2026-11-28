@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sifela.id — Pekerjaan fleksibel untuk mahasiswa dan mitra usaha</title>
 <meta name="description" content="Sifela.id: pusat informasi pekerjaan paruh waktu berbasis shift, proyek freelance kecil, dan pekerjaan harian. Cari lowongan sesuai jadwal dan wilayah, atau pasang lowongan usaha tanpa biaya.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%234f46e5'/><text y='72' x='50' font-size='58' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>S</text></svg>">
-<link rel="stylesheet" href="assets/styles.css?v=14">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%231e3a8a'/><text y='72' x='50' font-size='58' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>S</text></svg>">
+<link rel="stylesheet" href="assets/styles.css?v=16">
 </head>
 <body>
 
@@ -20,8 +20,10 @@
       </a>
       <nav class="landing-links">
         <a href="#beranda">Beranda</a>
-        <button class="nav-link-btn" data-go="akun">Akun &amp; Profil</button>
+        <a href="#kategori">Bidang</a>
+        <a href="#lowongan">Lowongan</a>
         <a href="#perusahaan">Untuk Perusahaan</a>
+        <button class="nav-link-btn" data-go="akun">Akun &amp; Profil</button>
         <button class="nav-link-btn" data-go="cari">Cari Lowongan</button>
       </nav>
     </div>
@@ -31,19 +33,24 @@
     <section id="beranda" class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <span class="pill">Lowongan nyata · terverifikasi admin</span>
-          <h1>Pekerjaan fleksibel yang <span class="hl">sesuai dengan jadwal kuliah</span>.</h1>
+          <span class="pill">Lowongan aktif di 6 kota</span>
+          <h1>Pekerjaan fleksibel yang <span class="hl">sesuai dengan jadwal Anda</span>.</h1>
           <p class="lead">
-            Sifela.id memusatkan informasi pekerjaan paruh waktu berbasis shift, proyek freelance
-            kecil, dan pekerjaan harian di sekitar kampus. Pilih slot yang tidak bertabrakan
-            dengan jadwal kuliah Anda.
+            Temukan shift paruh waktu, proyek freelance, dan pekerjaan harian di satu tempat.
+            Lihat syarat, upah, jadwal, dan lokasi lengkap—lalu lamar langsung tanpa keluar dari Sifela.
           </p>
+          <form class="hero-search" id="hero-search">
+            <span class="hs-ico">🔎</span>
+            <input id="hero-q" type="search" placeholder="Cari posisi, keahlian, atau perusahaan" autocomplete="off">
+            <select id="hero-city" aria-label="Pilih kota"></select>
+            <button class="btn btn-primary" type="submit">Cari Lowongan</button>
+          </form>
           <div class="hero-cta">
-            <button class="btn btn-primary btn-lg" data-go="auth" data-mode="register">Daftar Gratis</button>
-            <button class="btn btn-outline btn-lg" data-go="cari">Lihat Lowongan</button>
+            <button class="btn btn-outline btn-lg" data-go="auth" data-mode="register">Daftar Gratis</button>
+            <button class="btn btn-ghost btn-lg" data-go="cari">Jelajahi Semua Lowongan →</button>
           </div>
           <ul class="hero-stats">
-            <li><strong id="stat-jobs">0</strong><span>lowongan terverifikasi</span></li>
+            <li><strong id="stat-jobs">0</strong><span>lowongan tersedia</span></li>
             <li><strong id="stat-cities">6</strong><span>kota</span></li>
             <li><strong id="stat-types">3</strong><span>jenis pekerjaan</span></li>
           </ul>
@@ -51,28 +58,28 @@
 
         <div class="hero-card" aria-hidden="true">
           <div class="hc-head">
-            <span class="dot"></span> Kanal lowongan resmi
-            <span class="hc-badge">Live</span>
+            <span class="dot"></span> Informasi lowongan lengkap
+            <span class="hc-badge">Terbaru</span>
           </div>
           <div class="hc-item">
-            <div class="hc-logo">✓</div>
+            <div class="hc-logo">📋</div>
             <div>
-              <strong>Mitra terverifikasi</strong>
-              <p>Dokumen legalitas ditinjau admin</p>
+              <strong>Syarat dibaca jelas</strong>
+              <p>Pendidikan, pengalaman, dan keahlian dijelaskan di setiap lowongan.</p>
             </div>
           </div>
           <div class="hc-item">
-            <div class="hc-logo">🛡️</div>
+            <div class="hc-logo">🗓️</div>
             <div>
-              <strong>Lowongan dimoderasi</strong>
-              <p>Hanya yang disetujui yang tayang</p>
+              <strong>Jadwal dan upah transparan</strong>
+              <p>Hari kerja, jam, dan nominal upah tampil di satu halaman.</p>
             </div>
           </div>
           <div class="hc-item">
-            <div class="hc-logo">📄</div>
+            <div class="hc-logo">💬</div>
             <div>
-              <strong>Lamaran dengan CV asli</strong>
-              <p>Dikirim langsung ke mitra pemilik lowongan</p>
+              <strong>Lamar dan pantau status</strong>
+              <p>Kirim CV lewat Sifela dan cek perkembangan lamaran di akun Anda.</p>
             </div>
           </div>
         </div>
@@ -133,46 +140,25 @@
       </div>
     </section>
 
-    <section id="cari-lowongan" class="section section-alt">
+    <section id="kategori" class="section">
       <div class="wrap">
         <div class="section-head">
-          <h2>Cari Lowongan Sesuai Kebutuhan Anda</h2>
-          <p>Temukan pekerjaan yang sesuai dengan keahlian, jadwal, dan wilayah Anda.</p>
+          <h2>Jelajahi lowongan berdasarkan bidang</h2>
+          <p>Pilih bidang yang Anda minati, lalu lihat syarat dan jadwalnya secara lengkap.</p>
         </div>
-        <div class="feature-grid">
-          <article class="feature">
-            <div class="fi">🔎</div>
-            <h3>Pencarian</h3>
-            <p>Cari lowongan berdasarkan kata kunci, keahlian, atau nama perusahaan.</p>
-          </article>
-          <article class="feature">
-            <div class="fi">🎯</div>
-            <h3>Bidang</h3>
-            <p>Saring lowongan sesuai bidang, misalnya layanan makanan, ritel, atau desain.</p>
-          </article>
-          <article class="feature">
-            <div class="fi">💰</div>
-            <h3>Gaji</h3>
-            <p>Tentukan batas gaji minimum agar hasil pencarian sesuai harapan Anda.</p>
-          </article>
-          <article class="feature">
-            <div class="fi">📍</div>
-            <h3>Lokasi dan Jarak</h3>
-            <p>Pilih wilayah serta radius dari kampus atau tempat tinggal Anda.</p>
-          </article>
-          <article class="feature">
-            <div class="fi">🏢</div>
-            <h3>Tempat Kerja</h3>
-            <p>Pilih jenis pekerjaan, baik paruh waktu, proyek freelance, maupun pekerjaan harian.</p>
-          </article>
-          <article class="feature">
-            <div class="fi">🗓️</div>
-            <h3>Jadwal Tersedia</h3>
-            <p>Tandai hari kosong Anda agar sistem menyembunyikan shift yang bertabrakan.</p>
-          </article>
+        <div class="cat-grid" id="landing-cats"></div>
+      </div>
+    </section>
+
+    <section id="lowongan" class="section section-alt">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Lowongan terbaru</h2>
+          <p>Informasi dari perusahaan dan pemilik usaha yang siap Anda lamar langsung di Sifela.</p>
         </div>
-        <div class="hero-cta" style="justify-content:center;margin-bottom:0">
-          <button class="btn btn-primary btn-lg" data-go="cari">Buka Pencarian Lowongan</button>
+        <div class="landing-jobs" id="landing-jobs"></div>
+        <div class="hero-cta" style="justify-content:center;margin:32px 0 0">
+          <button class="btn btn-primary btn-lg" data-go="cari">Lihat Semua Lowongan →</button>
         </div>
       </div>
     </section>
@@ -191,7 +177,7 @@
             <button class="btn btn-primary btn-lg" data-go="auth" data-mode="register">Daftar sebagai Perusahaan</button>
             <a class="btn btn-outline btn-lg" href="#harga">Lihat Paket dan Harga</a>
           </div>
-          <p class="mitra-foot">Gratis: 2 lowongan aktif · Berbayar: hingga 10 lowongan, penonjolan, dan statistik.</p>
+          <p class="mitra-foot">Gratis: 2 lowongan aktif · Mitra Pro: hingga 10 lowongan, penonjolan, dan statistik.</p>
         </div>
         <div class="mitra-preview">
           <div class="mp-row">
@@ -222,7 +208,7 @@
             <h3>Gratis</h3>
             <p class="price"><span>Rp0</span>/bulan</p>
             <ul class="check-list">
-              <li>6 lowongan pertama</li>
+              <li>Akses 6 lowongan teratas</li>
               <li>Pencarian dan filter dasar</li>
               <li>Radius hingga 10 km</li>
               <li>3 lamaran per bulan</li>
@@ -250,7 +236,6 @@
           Sifela Plus menyediakan <b>semua lowongan, skor kecocokan lengkap, radius 50 km, lamaran tanpa batas, dan kontak mitra</b>.
           Untuk perusahaan, <a href="#perusahaan" style="color:var(--brand);font-weight:700">lihat Mitra Pro →</a>
         </p>
-        <p class="fine-print">Prototipe ini tidak memproses pembayaran nyata. Seluruh alur pembayaran hanya simulasi.</p>
       </div>
     </section>
   </main>
@@ -259,14 +244,14 @@
     <div class="wrap foot-inner">
       <div>
         <strong>sifela.id</strong>
-        <p>Lowongan nyata dari mitra terverifikasi. Pembayaran paket masih simulasi.</p>
+        <p>Temukan lowongan, kirim lamaran, dan terhubung dengan perusahaan dalam satu tempat.</p>
       </div>
       <div class="foot-links">
         <a href="#beranda">Beranda</a>
         <a href="#perusahaan">Untuk Perusahaan</a>
         <a href="#harga">Paket dan Harga</a>
       </div>
-      <p class="foot-note">Dibuat untuk tugas Kelompok 2 · 2026</p>
+      <p class="foot-note">© 2026 Sifela.id</p>
     </div>
   </footer>
 </div>
@@ -449,7 +434,7 @@
         <span class="brand-mark">S</span>
         <span class="brand-text">Sifela.id</span>
       </button>
-      <span class="payment-nav-note">Halaman pembayaran · simulasi prototipe</span>
+      <span class="payment-nav-note">Pembayaran paket Sifela</span>
     </div>
   </header>
   <main class="wrap payment-page">
