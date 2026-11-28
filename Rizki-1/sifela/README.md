@@ -8,7 +8,8 @@ Lowongan yang tampil untuk publik hanya yang berstatus `approved`. Mitra wajib
 mengunggah dokumen legalitas dan diverifikasi admin sebelum dapat memasang lowongan.
 Lowongan baru selalu berstatus `pending` sampai admin menyetujuinya.
 
-> Pembayaran (Sifela Plus / Mitra Pro), chat, dan notifikasi masih berupa simulasi UI.
+> Chat dan notifikasi berjalan langsung di Sifela. Pembayaran paket masih dikonfirmasi manual
+> sampai kredensial payment gateway tersedia.
 
 ---
 
@@ -188,4 +189,5 @@ menyimpan service role key atau DB password di kode, `vercel.json`, atau `.env`.
 - Session login disimpan oleh Supabase Auth di browser; data aplikasi tidak lagi
   disimpan di `localStorage`.
 - Navigasi selalu menyediakan tombol kembali ke Beranda.
-- Pembayaran, chat, dan notifikasi tetap simulasi dan tidak memproses transaksi nyata.
+- Chat dan notifikasi memakai tabel `messages`/`notifications` serta Realtime Supabase.
+- Pembayaran belum terhubung ke gateway; aktivasi paket dilakukan setelah konfirmasi pembayaran.

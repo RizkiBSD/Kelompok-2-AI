@@ -424,8 +424,8 @@ Cara melamar: ajukan lamaran langsung melalui Sifela.$sifela$,
 (
   '33333333-3333-4333-8333-333333333319',
   'ad2c0561-696c-4f74-afb2-e232218e1390',
-  'Junior Recruiter — KitaLulus Yogyakarta',
-  $sifela$Tim rekrutmen KitaLulus di Yogyakarta membuka lowongan Junior Recruiter dengan sistem kontrak. Benefit: BPJS, transport, dan cuti.
+  'Junior Recruiter — Tim Rekrutmen Yogyakarta',
+  $sifela$Tim rekrutmen mitra Sifela di Yogyakarta membuka lowongan Junior Recruiter dengan sistem kontrak. Benefit: BPJS, transport, dan cuti.
 
 Gaji: Rp3.000.000–Rp4.000.000 per bulan.
 
@@ -440,8 +440,8 @@ Cara melamar: ajukan lamaran langsung melalui Sifela.$sifela$,
   'Yogyakarta', 'yogyakarta', -7.7956, 110.3695, 3000000, 'bulan', 0,
   ARRAY['sen','sel','rab','kam','jum']::text[], '', '', 1,
   ARRAY['Administrasi','Komunikasi','Riset','Negosiasi']::text[], 0, 0, false, 0, false,
-  'KitaLulus',
-  'https://kitalulus.com/lowongan/detail/junior-recruiter-jogja-nxl2'
+  'Tim Rekrutmen Yogyakarta',
+  NULL
 ),
 (
   '33333333-3333-4333-8333-333333333320',
