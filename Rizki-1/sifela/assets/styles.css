@@ -521,6 +521,21 @@ button { font-family: inherit; cursor: pointer; }
   background: linear-gradient(105deg, #1e3a8a, #172554);
   color: #fff;
 }
+.appnav-item .nav-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #1e40af;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+.appnav-item.active .nav-dot { background: #fff; color: #1e3a8a; }
 .appbar-right { display: flex; align-items: center; gap: 10px; }
 .plan-badge {
   font-size: 11px;
@@ -1659,6 +1674,156 @@ button { font-family: inherit; cursor: pointer; }
   margin-bottom: 14px;
 }
 
+/* ---------- pesan & notifikasi ---------- */
+.chat-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  min-height: 540px;
+}
+.thread-list,
+.chat-panel,
+.notif-list {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+.thread-list { padding: 8px; overflow-y: auto; max-height: 620px; }
+.thread-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  transition: background .15s ease;
+}
+.thread-item:hover { background: rgba(30, 58, 138, .08); }
+.thread-item.active { background: rgba(30, 58, 138, .14); }
+.thread-avatar {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3a8a, #172554);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.thread-info { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.thread-info b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-job, .thread-preview { font-size: 11.5px; color: var(--muted); }
+.thread-preview { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.thread-side small { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.thread-unread {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #1e40af;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+.thread-empty { padding: 28px 14px; text-align: center; font-size: 13px; color: var(--muted); line-height: 1.7; }
+.chat-panel { display: flex; flex-direction: column; min-height: 540px; overflow: hidden; }
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.chat-head > div { display: flex; flex-direction: column; min-width: 0; }
+.chat-head b { font-size: 14px; }
+.chat-head small { font-size: 11.5px; color: var(--muted); }
+.chat-head .btn { margin-left: auto; }
+.chat-log { flex: 1; padding: 16px; overflow-y: auto; max-height: 430px; }
+.chat-hint { text-align: center; font-size: 13px; color: var(--muted); padding: 28px 0; }
+.bubble-row { display: flex; margin-bottom: 10px; }
+.bubble-row.mine { justify-content: flex-end; }
+.bubble {
+  max-width: min(78%, 520px);
+  padding: 10px 13px;
+  border-radius: 14px 14px 14px 4px;
+  background: rgba(30, 58, 138, .09);
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.bubble-row.mine .bubble {
+  border-radius: 14px 14px 4px 14px;
+  background: linear-gradient(135deg, #1e3a8a, #172554);
+  color: #fff;
+}
+.bubble small { display: block; margin-top: 4px; font-size: 10px; opacity: .65; text-align: right; }
+.chat-form {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+}
+.chat-form textarea {
+  flex: 1;
+  resize: none;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 13.5px;
+}
+.chat-form textarea:focus { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, .2); }
+.notif-list { overflow: hidden; }
+.notif-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.notif-item:last-child { border-bottom: 0; }
+.notif-item.unread { background: rgba(30, 58, 138, .07); }
+.notif-ico {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(30, 58, 138, .12);
+  font-size: 17px;
+}
+.notif-body { flex: 1; min-width: 0; }
+.notif-body b { font-size: 13.5px; }
+.notif-body p { font-size: 13px; color: var(--ink-2); margin: 2px 0; }
+.notif-body small { font-size: 11px; color: var(--muted); }
+.notif-item .btn { margin-left: auto; }
+.notif-dot { display: none; }
+.notif-item.unread .notif-dot {
+  display: block;
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: #1e40af;
+}
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */
@@ -1692,6 +1857,8 @@ button { font-family: inherit; cursor: pointer; }
   .appbar-search { order: 3; max-width: none; flex-basis: 100%; }
   .appnav { order: 4; width: 100%; overflow-x: auto; }
   .appnav-item { white-space: nowrap; }
+  .chat-layout { grid-template-columns: 260px minmax(0, 1fr); }
+  .chat-panel { min-height: 480px; }
   .auth-shell { grid-template-columns: 1fr; }
   .auth-aside { display: none; }
   .plan-grid { grid-template-columns: 1fr; }
@@ -1721,6 +1888,10 @@ button { font-family: inherit; cursor: pointer; }
   .mitra-stats, .compare-grid, .role-pick { grid-template-columns: 1fr; }
   .owner-row { grid-template-columns: 40px 1fr; }
   .owner-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .chat-layout { grid-template-columns: 1fr; min-height: 0; }
+  .thread-list { max-height: 230px; }
+  .chat-panel { min-height: 420px; }
+  .chat-log { max-height: 320px; }
   .foot-links { display: none; }
 }
 

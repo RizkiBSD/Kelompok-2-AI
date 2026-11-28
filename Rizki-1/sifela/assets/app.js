@@ -28,7 +28,7 @@ import SIFELA_DATA from "./data.js";
   ];
 
   /* halaman yang bisa dibuka lewat #/nama-halaman */
-  const TABS = ["beranda", "cari", "rekomendasi", "lamaran", "akun", "premium", "mitra", "checkout", "sukses"];
+  const TABS = ["beranda", "cari", "rekomendasi", "lamaran", "pesan", "notifikasi", "akun", "premium", "mitra", "checkout", "sukses"];
 
   /* warna aksen per kategori, dipakai di logo kartu lowongan */
   const CAT_COLOR = {
@@ -61,7 +61,10 @@ import SIFELA_DATA from "./data.js";
       days: [], minPay: 0, scheduleOnly: false, matchOnly: false, sort: "relevance"
     },
     modal: null,
-    checkout: { product: "plus", planId: "bulanan", method: "qris" }
+    checkout: { product: "plus", planId: "bulanan", method: "qris" },
+    chat: { threads: [], messages: [], names: {}, active: null },
+    notifications: [],
+    realtime: null
   };
 
   /* ---------------- helper ---------------- */
@@ -128,6 +131,33 @@ import SIFELA_DATA from "./data.js";
     return d.toFixed(1).replace(".0", "") + " km";
   }
 
+  function threadKey(userId, jobId) {
+    return (userId || "") + "|" + (jobId || "");
+  }
+
+  function readStamp(key) {
+    try { return Number(localStorage.getItem("sifela.chat.read." + key)) || 0; }
+    catch (_) { return 0; }
+  }
+
+  function markRead(key) {
+    try { localStorage.setItem("sifela.chat.read." + key, String(Date.now())); }
+    catch (_) { /* penyimpanan lokal tidak tersedia */ }
+  }
+
+  function timeAgo(value) {
+    const t = Date.parse(value || "") || 0;
+    if (!t) return "";
+    const mins = Math.max(0, Math.floor((Date.now() - t) / 60000));
+    if (mins < 1) return "baru saja";
+    if (mins < 60) return mins + " mnt";
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + " jam";
+    const days = Math.floor(hours / 24);
+    if (days < 7) return days + " hari";
+    return new Date(t).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  }
+
   /* area + jarak, tanpa mengulang "Remote" dua kali */
   function areaText(job) {
     const bits = [job.area];
@@ -144,15 +174,6 @@ import SIFELA_DATA from "./data.js";
   function catStyle(cat) {
     const c = CAT_COLOR[cat] || "#4f46e5";
     return ' style="background:' + c + '1a;color:' + c + '"';
-  }
-
-  function timeAgo(ts) {
-    const diff = Date.now() - ts;
-    const h = Math.floor(diff / 36e5);
-    if (h < 1) return "baru saja";
-    if (h < 24) return h + " jam lalu";
-    const d = Math.floor(h / 24);
-    return d + " hari lalu";
   }
 
   function daysText(job) {
@@ -351,6 +372,7 @@ import SIFELA_DATA from "./data.js";
     return {
       id: a.id,
       jobId: a.job_id,
+      applicantId: a.applicant_id,
       at: a.created_at ? Date.parse(a.created_at) : Date.now(),
       status: status === "pending" ? "sent" : status === "reviewed" ? "review" : status,
       rawStatus: status,
@@ -450,6 +472,258 @@ import SIFELA_DATA from "./data.js";
       mitra: mitra.error ? [] : (mitra.data || []),
       jobs: jobs.error ? [] : (jobs.data || []).map(mapJob)
     };
+  }
+
+  /* ============================================================
+     PESAN & NOTIFIKASI
+     ============================================================ */
+  function chatName(userId, jobId) {
+    const uid = currentUid();
+    const job = DATA.jobs.find(j => j.id === jobId);
+    if (job && job.owner === userId) return job.org;
+    if (job && job.owner === uid) {
+      const applicant = state.employerApplications.find(a => a.applicantId === userId);
+      if (applicant) return applicant.applicantName;
+    }
+    return state.chat.names[userId] || "Pengguna Sifela";
+  }
+
+  async function loadChatNames(ids) {
+    const missing = ids.filter(id => id && !state.chat.names[id]);
+    if (!missing.length) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name, company_name")
+      .in("id", missing);
+    (data || []).forEach(p => {
+      state.chat.names[p.id] = p.company_name || p.full_name || "Pengguna Sifela";
+    });
+  }
+
+  function buildThreads() {
+    const uid = currentUid();
+    if (!uid) { state.chat.threads = []; return; }
+    const map = new Map();
+
+    if (state.chat.active) {
+      const parts = state.chat.active.split("|");
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        map.set(state.chat.active, {
+          key: state.chat.active, userId: parts[0], jobId: parts[1], last: null, unread: 0
+        });
+      }
+    }
+
+    state.chat.messages.forEach(msg => {
+      const other = msg.sender_id === uid ? msg.recipient_id : msg.sender_id;
+      const key = threadKey(other, msg.job_id);
+      if (!other || !msg.job_id) return;
+      let t = map.get(key);
+      if (!t) {
+        t = { key: key, userId: other, jobId: msg.job_id, last: null, unread: 0 };
+        map.set(key, t);
+      }
+      const at = Date.parse(msg.created_at) || 0;
+      if (!t.last || at > (Date.parse(t.last.created_at) || 0)) t.last = msg;
+      if (msg.recipient_id === uid && at > readStamp(key)) t.unread++;
+    });
+
+    state.chat.threads = Array.from(map.values()).sort((a, b) =>
+      (Date.parse(b.last && b.last.created_at) || 0) - (Date.parse(a.last && a.last.created_at) || 0));
+  }
+
+  async function loadMessages() {
+    const uid = currentUid();
+    if (!uid) { state.chat.messages = []; state.chat.threads = []; updateNavBadges(); return; }
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .or("sender_id.eq." + uid + ",recipient_id.eq." + uid)
+      .order("created_at", { ascending: true });
+    if (error) { toast("Gagal memuat pesan: " + error.message, "warn"); return; }
+    state.chat.messages = data || [];
+    const others = state.chat.messages.map(m => m.sender_id === uid ? m.recipient_id : m.sender_id);
+    await loadChatNames(Array.from(new Set(others)));
+    buildThreads();
+    updateNavBadges();
+  }
+
+  async function loadNotifications() {
+    const uid = currentUid();
+    if (!uid) { state.notifications = []; updateNavBadges(); return; }
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) { toast("Gagal memuat notifikasi: " + error.message, "warn"); return; }
+    state.notifications = data || [];
+    updateNavBadges();
+  }
+
+  function updateNavBadges() {
+    const unreadChat = (state.chat.threads || []).reduce((n, t) => n + (t.unread || 0), 0);
+    const unreadNotif = (state.notifications || []).filter(n => !n.read).length;
+    [["#chat-badge", unreadChat], ["#notif-badge", unreadNotif]].forEach(([sel, n]) => {
+      const el = $(sel);
+      if (!el) return;
+      el.textContent = n > 99 ? "99+" : String(n);
+      el.hidden = n <= 0;
+    });
+  }
+
+  async function markNotificationsRead() {
+    const uid = currentUid();
+    if (!uid || !state.notifications.some(n => !n.read)) return;
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", uid)
+      .eq("read", false);
+    if (error) return;
+    state.notifications.forEach(n => { n.read = true; });
+    updateNavBadges();
+    if (state.tab === "notifikasi") renderNotifikasi();
+  }
+
+  function subscribeRealtime() {
+    if (state.realtime) { supabase.removeChannel(state.realtime); state.realtime = null; }
+    const uid = currentUid();
+    if (!uid) return;
+    state.realtime = supabase.channel("sifela-inbox-" + uid.slice(0, 8))
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "messages", filter: "recipient_id=eq." + uid
+      }, async () => {
+        await loadMessages();
+        if (state.tab === "pesan") renderChat();
+        toast("Pesan baru diterima.", "ok");
+      })
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + uid
+      }, async () => {
+        await loadNotifications();
+        if (state.tab === "notifikasi") renderNotifikasi();
+      })
+      .subscribe();
+  }
+
+  function renderChat() {
+    const threads = state.chat.threads;
+    let active = threads.find(t => t.key === state.chat.active) || threads[0] || null;
+    state.chat.active = active ? active.key : null;
+    if (active && active.unread) { markRead(active.key); active.unread = 0; }
+    updateNavBadges();
+
+    const list = threads.length
+      ? threads.map(t => {
+          const name = chatName(t.userId, t.jobId);
+          const job = DATA.jobs.find(j => j.id === t.jobId);
+          const body = (t.last && t.last.body) || "Mulai percakapan";
+          return '<button class="thread-item' + (t.key === state.chat.active ? " active" : "") +
+            '" data-thread="' + esc(t.key) + '">' +
+            '<span class="thread-avatar">' + esc(initials(name)) + "</span>" +
+            '<span class="thread-info"><b>' + esc(name) + "</b>" +
+            '<span class="thread-job">' + esc(job ? job.title : "Lowongan Sifela") + "</span>" +
+            '<span class="thread-preview">' + esc(body.length > 58 ? body.slice(0, 58) + "…" : body) + "</span></span>" +
+            '<span class="thread-side"><small>' + esc(t.last ? timeAgo(t.last.created_at) : "") + "</small>" +
+            (t.unread ? '<span class="thread-unread">' + t.unread + "</span>" : "") + "</span>" +
+            "</button>";
+        }).join("")
+      : '<div class="thread-empty">Belum ada percakapan.<br>Buka lowongan lalu pilih <b>Kontak</b> untuk mulai.</div>';
+
+    let panel;
+    if (!active) {
+      panel = '<div class="empty"><div class="e-ico">💬</div><h3>Ruang pesan Anda</h3>' +
+        '<p>Percakapan dengan mitra dan pencari kerja tampil di sini.</p></div>';
+    } else {
+      const uid = currentUid();
+      const name = chatName(active.userId, active.jobId);
+      const job = DATA.jobs.find(j => j.id === active.jobId);
+      const bubbles = state.chat.messages
+        .filter(m => threadKey(m.sender_id === uid ? m.recipient_id : m.sender_id, m.job_id) === active.key)
+        .map(m => '<div class="bubble-row' + (m.sender_id === uid ? " mine" : "") + '">' +
+          '<div class="bubble">' + esc(m.body) + '<small>' + esc(timeAgo(m.created_at)) + "</small></div></div>")
+        .join("");
+      panel =
+        '<div class="chat-head"><span class="thread-avatar">' + esc(initials(name)) + "</span>" +
+          '<div><b>' + esc(name) + "</b><small>" + esc(job ? job.title : "Lowongan Sifela") + "</small></div>" +
+          (job ? '<button class="btn btn-outline btn-sm" data-job="' + esc(job.id) + '">Lihat lowongan</button>' : "") +
+        "</div>" +
+        '<div class="chat-log" id="chat-log">' +
+          (bubbles || '<p class="chat-hint">Tulis pesan pertama untuk memulai percakapan.</p>') +
+        "</div>" +
+        '<form id="chat-form" class="chat-form">' +
+          '<textarea id="chat-input" rows="2" maxlength="2000" placeholder="Tulis pesan Anda…" required></textarea>' +
+          '<button class="btn btn-primary" type="submit">Kirim</button>' +
+        "</form>";
+    }
+
+    $("#app-main").innerHTML =
+      '<div class="page-head"><h2>Pesan</h2>' +
+        "<p>Komunikasi langsung dengan mitra pemilik lowongan tetap berada di Sifela.</p></div>" +
+      '<div class="chat-layout"><aside class="thread-list">' + list + "</aside>" +
+      '<section class="chat-panel">' + panel + "</section></div>";
+
+    const log = $("#chat-log");
+    if (log) log.scrollTop = log.scrollHeight;
+  }
+
+  function renderNotifikasi() {
+    const items = state.notifications;
+    const body = items.length
+      ? items.map(n => {
+          const href = n.href && n.href.indexOf("#") === 0 ? n.href.slice(1) : "";
+          const known = ["lamaran", "pesan", "cari", "profil"].indexOf(href) >= 0;
+          return '<div class="notif-item' + (n.read ? "" : " unread") + '">' +
+            '<span class="notif-ico">' + (n.title === "Pesan baru" ? "💬" : n.title === "Lamaran masuk" ? "📥" : "🔔") + "</span>" +
+            '<div class="notif-body"><b>' + esc(n.title) + "</b><p>" + esc(n.body) + "</p>" +
+            '<small>' + esc(timeAgo(n.created_at)) + "</small></div>" +
+            (known ? '<button class="btn btn-outline btn-sm" data-notif-href="' + esc(href) + '">Buka</button>' : "") +
+            '<span class="notif-dot"></span></div>';
+        }).join("")
+      : '<div class="empty"><div class="e-ico">🔔</div><h3>Belum ada notifikasi</h3>' +
+        '<p>Pembaruan lamaran dan pesan baru akan muncul di sini.</p></div>';
+
+    $("#app-main").innerHTML =
+      '<div class="page-head page-head-row"><div><h2>Notifikasi</h2>' +
+        "<p>Pembaruan penting tentang lamaran dan pesan Anda.</p></div>" +
+        (items.some(n => !n.read) ? '<button class="btn btn-outline btn-sm" id="notif-read-all">Tandai semua dibaca</button>' : "") +
+        "</div>" +
+      '<div class="notif-list">' + body + "</div>";
+  }
+
+  async function openChatWith(userId, jobId) {
+    if (!userId) { toast("Mitra belum tersedia untuk pesan.", "warn"); return; }
+    const key = threadKey(userId, jobId);
+    closeModal();
+    state.tab = "pesan";
+    state.chat.active = key;
+    await loadMessages();
+    markRead(key);
+    buildThreads();
+    renderApp();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function sendMessage(body) {
+    const key = state.chat.active;
+    if (!key) return;
+    const parts = key.split("|");
+    if (parts.length !== 2) return;
+    const text = String(body || "").trim();
+    if (!text) return;
+    if (text.length > 2000) { toast("Pesan terlalu panjang (maks. 2000 karakter).", "warn"); return; }
+    const { error } = await supabase.from("messages").insert({
+      job_id: parts[1],
+      sender_id: currentUid(),
+      recipient_id: parts[0],
+      body: text
+    });
+    if (error) { toast("Gagal mengirim pesan: " + error.message, "warn"); return; }
+    markRead(key);
+    await loadMessages();
+    renderChat();
   }
 
   /* ---------------- premium ---------------- */
@@ -723,6 +997,8 @@ import SIFELA_DATA from "./data.js";
     if (state.tab === "cari") renderCari();
     else if (state.tab === "rekomendasi") renderRekomendasi();
     else if (state.tab === "lamaran") renderLamaran();
+    else if (state.tab === "pesan") renderChat();
+    else if (state.tab === "notifikasi") renderNotifikasi();
     else if (state.tab === "profil") renderProfil();
     else if (state.tab === "premium") renderPremium();
     else if (state.tab === "mitra") renderMitra();
@@ -1049,8 +1325,8 @@ import SIFELA_DATA from "./data.js";
       ["Skor kecocokan + rincian faktor", premium, "Terkunci"],
       ["Radius hingga 50 km", premium, "Maks. 10 km"],
       ["Lamaran tanpa batas", premium, FREE.applies + "/bulan"],
-      ["Kontak langsung & chat", premium, "Tidak tersedia"],
-      ["Notifikasi shift baru", premium, "Tidak tersedia"]
+      ["Prioritas balasan dari mitra", premium, "Standar"],
+      ["Notifikasi lowongan sesuai minat", premium, "Notifikasi lamaran & pesan"]
     ];
 
     const status = '<div class="panel"><h3>Status fitur</h3>' +
@@ -1582,8 +1858,8 @@ import SIFELA_DATA from "./data.js";
       score: ["Lihat skor kecocokan", "Plus menampilkan persentase kecocokan dan rincian per faktor untuk setiap lowongan."],
       radius: ["Perluas jangkauan", "Paket Gratis dibatasi 10 km. Plus membuka radius hingga 50 km."],
       apply: ["Kuota lamaran habis", "Paket Gratis memberi 3 lamaran per bulan. Plus tidak membatasi jumlah lamaran."],
-      contact: ["Kontak langsung", "Hubungi perekrut langsung lewat chat hanya tersedia di Plus."],
-      alert: ["Notifikasi shift baru", "Dapatkan pemberitahuan saat shift baru muncul di radiusmu — fitur Plus."],
+      contact: ["Prioritas balasan", "Plus memberi prioritas balasan dari mitra. Pesan ke mitra tetap bisa dikirim langsung di Sifela."],
+      alert: ["Notifikasi lowongan baru", "Dapatkan pemberitahuan lowongan baru sesuai minat Anda — fitur Plus."],
       boost: ["Tonjolkan lowonganmu", "Mitra Pro menaruh lowonganmu di urutan teratas, menampilkan badge “Ditonjolkan”, dan membuka statistik lamaran."],
       partnerQuota: ["Pasang lebih banyak lowongan", "Gratis maksimal " + FREE_PARTNER_JOBS + " lowongan aktif. Mitra Pro membuka hingga 10 lowongan sekaligus."],
       partnerStats: ["Statistik calon pekerja", "Lihat jumlah pembuka dan lamaran masuk untuk setiap lowonganmu dengan Mitra Pro."]
@@ -1607,7 +1883,7 @@ import SIFELA_DATA from "./data.js";
             "<li>Skor kecocokan + rincian faktor</li>" +
             "<li>Radius hingga 50 km</li>" +
             "<li>Lamaran tanpa batas</li>" +
-            "<li>Kontak langsung & notifikasi shift baru</li>") +
+            "<li>Prioritas balasan & notifikasi lowongan baru</li>") +
       "</ul>" +
       '<button class="btn btn-gold btn-block" id="pw-cta">' +
         (forPartner ? "Lihat paket Mitra Pro — mulai Rp49.000" : "Lihat paket Plus — mulai Rp29.000") +
@@ -1725,8 +2001,12 @@ import SIFELA_DATA from "./data.js";
     });
 
     $("#jd-contact").addEventListener("click", () => {
-      if (!isPremium()) { closeModal(); openPaywall("contact"); return; }
-      toast("Ruang chat dengan mitra siap digunakan.");
+      if (!currentUid()) { closeModal(); showView("auth"); setAuthTab("login"); return; }
+      if (job.owner === currentUid()) {
+        toast("Ini lowongan Anda. Balas pesan melalui menu Pesan.");
+        return;
+      }
+      openChatWith(job.owner, job.id);
     });
 
     const scoreBtn = $("#modal-sheet [data-open-premium]");
@@ -2014,7 +2294,13 @@ import SIFELA_DATA from "./data.js";
     state.session = null;
     state.user = null;
     state.applications = [];
+    state.chat.messages = [];
+    state.chat.threads = [];
+    state.chat.active = null;
+    state.notifications = [];
+    if (state.realtime) { supabase.removeChannel(state.realtime); state.realtime = null; }
     DATA.jobs = [];
+    updateNavBadges();
     closeModal();
     showView("landing");
   }
@@ -2057,6 +2343,8 @@ import SIFELA_DATA from "./data.js";
         state.tab = navBtn.dataset.appNav;
         if (state.tab === "cari") { $("#sidebar").style.display = ""; }
         renderApp();
+        if (state.tab === "pesan") loadMessages().then(renderChat);
+        if (state.tab === "notifikasi") markNotificationsRead();
         window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
@@ -2165,6 +2453,28 @@ import SIFELA_DATA from "./data.js";
       if (ckMethod) { state.checkout.method = ckMethod.dataset.checkoutMethod; renderCheckout(); return; }
 
       if (t.closest("[data-pay]")) { payNow(); return; }
+
+      const threadBtn = t.closest("[data-thread]");
+      if (threadBtn) {
+        state.chat.active = threadBtn.dataset.thread;
+        markRead(state.chat.active);
+        const thread = state.chat.threads.find(x => x.key === state.chat.active);
+        if (thread) thread.unread = 0;
+        renderChat();
+        return;
+      }
+
+      if (t.closest("#notif-read-all")) { markNotificationsRead(); return; }
+
+      const notifBtn = t.closest("[data-notif-href]");
+      if (notifBtn) {
+        const target = notifBtn.dataset.notifHref;
+        state.tab = target;
+        if (target === "pesan") loadMessages().then(renderChat);
+        renderApp();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
 
       const postBtn = t.closest("[data-post-job]");
       if (postBtn) { openPostJob(); return; }
@@ -2317,6 +2627,16 @@ import SIFELA_DATA from "./data.js";
       }
     });
 
+    $("#app-main").addEventListener("submit", (ev) => {
+      if (ev.target.id !== "chat-form") return;
+      ev.preventDefault();
+      const input = $("#chat-input");
+      const text = input ? input.value : "";
+      if (!text.trim()) return;
+      if (input) input.value = "";
+      sendMessage(text);
+    });
+
     $("#app-main").addEventListener("input", (ev) => {
       const t = ev.target;
       if (t.id === "pf-radius") {
@@ -2394,6 +2714,12 @@ import SIFELA_DATA from "./data.js";
     if (!state.session) {
       state.user = null;
       state.applications = [];
+      state.chat.messages = [];
+      state.chat.threads = [];
+      state.chat.active = null;
+      state.notifications = [];
+      if (state.realtime) { supabase.removeChannel(state.realtime); state.realtime = null; }
+      updateNavBadges();
       return null;
     }
 
@@ -2413,6 +2739,9 @@ import SIFELA_DATA from "./data.js";
     state.adminLoadedFor = null;
     await loadJobs();
     await loadMyApplications();
+    await loadMessages();
+    await loadNotifications();
+    subscribeRealtime();
     return state.user;
   }
 
@@ -2434,7 +2763,19 @@ import SIFELA_DATA from "./data.js";
 
     bindEvents();
     setAuthTab("login");
-    supabase.auth.onAuthStateChange((_event, session) => { state.session = session || null; });
+    supabase.auth.onAuthStateChange((event, session) => {
+      state.session = session || null;
+      if (event === "SIGNED_OUT") {
+        state.user = null;
+        state.applications = [];
+        state.chat.messages = [];
+        state.chat.threads = [];
+        state.chat.active = null;
+        state.notifications = [];
+        if (state.realtime) { supabase.removeChannel(state.realtime); state.realtime = null; }
+        updateNavBadges();
+      }
+    });
 
     await restoreSession();
     await loadJobs();
