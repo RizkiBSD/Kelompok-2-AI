@@ -134,9 +134,10 @@ import SIFELA_DATA from "./data.js";
     if (job.remote) {
       if (normalize(job.area) !== "remote") bits.push("Remote");
     } else {
-      bits.push(km(distanceTo(job)));
+      const d = distanceTo(job);
+      if (d > 0) bits.push(km(d));
     }
-    return bits.join(" · ");
+    return bits.filter(Boolean).join(" · ");
   }
 
   /* latar logo kartu mengikuti warna kategori */
@@ -366,9 +367,11 @@ import SIFELA_DATA from "./data.js";
   }
 
   async function loadJobs() {
+    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("jobs")
       .select("*, profiles!jobs_employer_id_fkey(company_name, full_name, is_verified)")
+      .or("expires_at.is.null,expires_at.gt." + now)
       .order("created_at", { ascending: false });
     if (error) { toast("Gagal memuat lowongan: " + error.message, "warn"); return; }
     DATA.jobs = (data || []).map(mapJob);
@@ -1544,6 +1547,34 @@ import SIFELA_DATA from "./data.js";
     state.modal = null;
   }
 
+  function openLegal(kind) {
+    const privacy = kind === "privacy";
+    const copy = privacy
+      ? "<p>Sifela.id menyimpan data akun, profil, dan berkas yang Anda unggah untuk keperluan pencarian kerja dan proses lamaran.</p>" +
+        "<p>CV Anda tersimpan di penyimpanan privat dan hanya dapat diakses oleh Anda, tim Sifela, serta mitra pemilik lowongan yang Anda lamar. Dokumen legalitas usaha tersimpan terpisah dan hanya ditinjau tim moderator.</p>" +
+        "<p>Kami tidak menjual data pribadi. Anda dapat menghapus berkas yang tersimpan melalui halaman Akun & Profil kapan saja.</p>"
+      : "<p>Dengan menggunakan Sifela.id, Anda menyetujui penggunaan layanan ini untuk mencari atau memasang lowongan kerja sesuai ketentuan yang berlaku.</p>" +
+        "<p>Informasi lowongan ditampilkan apa adanya. Pencari kerja bertanggung jawab atas kebenaran data profil dan berkas lamaran yang dikirim. Pemilik usaha bertanggung jawab atas kebenaran informasi lowongan dan legalitas usahanya.</p>" +
+        "<p>Tim Sifela dapat menolak atau menghentikan tayangan lowongan yang tidak sesuai ketentuan.</p>";
+    openModal(
+      '<div class="legal-sheet"><h3>' + (privacy ? "Kebijakan Privasi" : "Syarat & Ketentuan") + "</h3>" +
+        '<div class="legal-copy">' + copy + "</div>" +
+        '<button class="btn btn-primary btn-block" data-close-modal>Mengerti</button></div>',
+      { name: "legal", wide: true }
+    );
+  }
+
+  async function resetPassword() {
+    const email = String($("#form-login input[name=email]")?.value || "").trim();
+    if (!email) { toast("Isi email terlebih dahulu.", "warn"); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/"
+    });
+    toast(error
+      ? "Gagal mengirim tautan: " + error.message
+      : "Tautan atur ulang sandi dikirim ke email Anda.", error ? "warn" : "ok");
+  }
+
   /* ---------------- paywall ---------------- */
   function openPaywall(reason) {
     const reasons = {
@@ -2012,6 +2043,12 @@ import SIFELA_DATA from "./data.js";
 
       const authTab = t.closest("[data-auth-tab]");
       if (authTab) { ev.preventDefault(); setAuthTab(authTab.dataset.authTab); return; }
+
+      const resetBtn = t.closest("[data-reset-password]");
+      if (resetBtn) { ev.preventDefault(); resetPassword(); return; }
+
+      const legal = t.closest("[data-legal]");
+      if (legal) { ev.preventDefault(); openLegal(legal.dataset.legal); return; }
 
       const navBtn = t.closest("[data-app-nav]");
       if (navBtn) {

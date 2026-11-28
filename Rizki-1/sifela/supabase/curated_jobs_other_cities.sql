@@ -469,3 +469,11 @@ FROM public.jobs
 WHERE employer_id = 'ad2c0561-696c-4f74-afb2-e232218e1390'
 GROUP BY city
 ORDER BY city;
+
+-- Deskripsi kurasi tidak menampilkan sumber kompetitor. Bagian ini memastikan
+-- teks tetap bersih bila file seed historis ini dijalankan ulang.
+UPDATE public.jobs
+SET description =
+  rtrim(regexp_replace(regexp_replace(description, '^Sumber:[^\n]*\n(?:https?://[^\n]*\n)?\n?', ''), '\nKontak/lamaran:[^\n]*$', ''))
+  || E'\n\nCara melamar: ajukan lamaran langsung melalui Sifela.'
+WHERE description LIKE 'Sumber:%';
