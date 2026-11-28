@@ -5,69 +5,8 @@
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- 0. Fungsi pembantu (SECURITY DEFINER)
---    Dipakai di kebijakan RLS untuk menghindari rekursi pada tabel profiles.
--- ----------------------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role = 'admin'
-  );
-$$;
-
-CREATE OR REPLACE FUNCTION public.is_mitra()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role = 'mitra'
-  );
-$$;
-
-CREATE OR REPLACE FUNCTION public.is_verified_mitra()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role = 'mitra' AND is_verified = true
-  );
-$$;
-
-CREATE OR REPLACE FUNCTION public.owns_job(p_job_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.jobs
-    WHERE id = p_job_id AND employer_id = auth.uid()
-  );
-$$;
-
-GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.is_mitra() TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.is_verified_mitra() TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.owns_job(uuid) TO anon, authenticated;
-
--- ----------------------------------------------------------------------------
 -- 1. Tabel
+--    Dibuat lebih dulu karena fungsi helper di bawah merujuk ke tabel-tabel ini.
 -- ----------------------------------------------------------------------------
 
 -- Profil pengguna. role dan is_verified HANYA bisa diubah admin (lihat trigger
@@ -133,7 +72,69 @@ CREATE INDEX IF NOT EXISTS applications_applicant_idx
   ON public.applications (applicant_id);
 
 -- ----------------------------------------------------------------------------
--- 2. Trigger
+-- 2. Fungsi pembantu (SECURITY DEFINER)
+--    Dipakai di kebijakan RLS untuk menghindari rekursi pada tabel profiles.
+-- ----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_mitra()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'mitra'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_verified_mitra()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'mitra' AND is_verified = true
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.owns_job(p_job_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.jobs
+    WHERE id = p_job_id AND employer_id = auth.uid()
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.is_mitra() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.is_verified_mitra() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.owns_job(uuid) TO anon, authenticated;
+
+-- ----------------------------------------------------------------------------
+-- 3. Trigger
 -- ----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.set_updated_at()
@@ -169,6 +170,10 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
+  -- Perintah langsung dari SQL Editor / CLI (tanpa sesi auth) dipercaya.
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
   IF NOT public.is_admin() THEN
     IF NEW.role IS DISTINCT FROM OLD.role
        OR NEW.is_verified IS DISTINCT FROM OLD.is_verified THEN
@@ -192,6 +197,10 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
+  -- Perintah langsung dari SQL Editor / CLI (tanpa sesi auth) dipercaya.
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
   IF NOT public.is_admin() THEN
     IF NEW.status IS DISTINCT FROM OLD.status THEN
       RAISE EXCEPTION 'Status lowongan hanya dapat diubah oleh admin';
@@ -247,7 +256,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ----------------------------------------------------------------------------
--- 3. Storage bucket (PRIVATE — akses lewat RLS / signed URL)
+-- 4. Storage bucket (PRIVATE — akses lewat RLS / signed URL)
 -- ----------------------------------------------------------------------------
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -278,7 +287,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Upload dari klien: supabase.storage.from('cvs').upload(`${user.id}/${file.name}`, file)
 
 -- ----------------------------------------------------------------------------
--- 4. Row Level Security — tabel
+-- 5. Row Level Security — tabel
 -- ----------------------------------------------------------------------------
 
 ALTER TABLE public.profiles    ENABLE ROW LEVEL SECURITY;
@@ -336,7 +345,7 @@ CREATE POLICY jobs_select_approved_own_or_admin
     OR public.is_admin()
   );
 
--- Mitra terverifikasi bisa membuat lowongan, tetapistatusnya WAJIB 'pending'.
+-- Mitra terverifikasi bisa membuat lowongan, tetapi statusnya WAJIB 'pending'.
 DROP POLICY IF EXISTS jobs_insert_verified_mitra ON public.jobs;
 CREATE POLICY jobs_insert_verified_mitra
   ON public.jobs FOR INSERT TO authenticated
@@ -387,10 +396,11 @@ CREATE POLICY applications_delete_own_pending
   USING (applicant_id = auth.uid() AND status = 'pending');
 
 -- ----------------------------------------------------------------------------
--- 5. Row Level Security — Storage objects
+-- 6. Row Level Security — Storage objects
 -- ----------------------------------------------------------------------------
 
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- storage.objects sudah memiliki RLS aktif bawaan Supabase.
+-- Kebijakan di bawah dibuat dengan hak akses role postgres di SQL Editor.
 
 ----- Bucket: cvs -----
 DROP POLICY IF EXISTS cvs_insert_own ON storage.objects;
@@ -491,7 +501,7 @@ CREATE POLICY company_docs_delete_own
   );
 
 -- ============================================================================
--- 6. Catatan pakai (tidak dijalankan otomatis)
+-- 7. Catatan pakai (tidak dijalankan otomatis)
 -- ----------------------------------------------------------------------------
 -- a) Buat akun admin lewat Supabase Auth > Add user, lalu jadikan admin:
 --

@@ -1,15 +1,14 @@
 /* ============================================================
-   Sifela — aplikasi prototipe
-   Vanilla JS. Tanpa build step. Data disimpan di localStorage.
+   Sifela.id — aplikasi dengan backend Supabase
    ============================================================ */
+import { supabase } from "./supabase.js";
+import SIFELA_DATA from "./data.js";
+
 (function () {
   "use strict";
 
   /* ---------------- konstanta ---------------- */
-  const DATA = window.SIFELA_DATA;
-  const LS_USERS = "sifela_users_v1";
-  const LS_SESSION = "sifela_session_v1";
-  const LS_JOBS = "sifela_jobs_v1";
+  const DATA = SIFELA_DATA;
 
   const FREE = { visibleJobs: 6, applies: 3, maxRadius: 10 };
   const MAX_RADIUS = 50;
@@ -50,6 +49,12 @@
   /* ---------------- state ---------------- */
   const state = {
     user: null,
+    session: null,
+    applications: [],
+    employerApplications: [],
+    employerLoadedFor: null,
+    admin: { mitra: [], jobs: [] },
+    adminLoadedFor: null,
     tab: "beranda",
     filters: {
       q: "", city: "bandung", radius: 10, cats: [], types: [],
@@ -88,14 +93,6 @@
     if (job.unit === "jam") return job.pay;
     if (job.hours > 0) return Math.round(job.pay / job.hours);
     return null;
-  }
-
-  function hashPass(s) {
-    // DEMO SAJA — bukan kriptografi aman.
-    let h = 5381;
-    const str = "sifela::" + s;
-    for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
-    return "h" + (h >>> 0).toString(36);
   }
 
   function initials(name) {
@@ -177,15 +174,7 @@
     }, 3200);
   }
 
-  /* ---------------- storage ---------------- */
-  function loadUsers() {
-    try { return JSON.parse(localStorage.getItem(LS_USERS) || "{}"); }
-    catch (e) { return {}; }
-  }
-  function saveUsers(u) {
-    localStorage.setItem(LS_USERS, JSON.stringify(u));
-  }
-
+  /* ---------------- profil & sesi (Supabase) ---------------- */
   function defaultProfile(city) {
     return {
       city: city || "bandung",
@@ -212,7 +201,6 @@
     };
   }
 
-  /* Akun lama di localStorage mungkin belum punya kolom baru. */
   function ensureProfile(user) {
     if (!user) return user;
     user.profile = Object.assign({}, defaultProfile(user.profile && user.profile.city), user.profile || {});
@@ -220,43 +208,207 @@
     return user;
   }
 
-  function persistUser() {
-    if (!state.user) return;
-    const users = loadUsers();
-    users[state.user.email] = state.user;
-    saveUsers(users);
-  }
-
-  function sessionLogin(email) {
-    localStorage.setItem(LS_SESSION, email);
-  }
-  function sessionLogout() {
-    localStorage.removeItem(LS_SESSION);
-  }
   function sessionEmail() {
-    return localStorage.getItem(LS_SESSION);
+    return state.session && state.session.user ? state.session.user.email : null;
+  }
+  function currentUid() {
+    return state.session && state.session.user ? state.session.user.id : null;
   }
 
-  function loadPostedJobs() {
-    try { return JSON.parse(localStorage.getItem(LS_JOBS) || "[]"); }
-    catch (e) { return []; }
-  }
-
-  function savePostedJobs(list) {
-    localStorage.setItem(LS_JOBS, JSON.stringify(list));
-  }
-
-  /* lowongan hasil input mitra digabung ke dataset agar ikut tercari */
-  function mergePostedJobs() {
-    const mine = loadPostedJobs();
-    mine.forEach(job => {
-      if (!DATA.jobs.some(j => j.id === job.id)) DATA.jobs.push(job);
-    });
+  /* Simpan perubahan profil ke tabel profiles (RLS: hanya baris sendiri). */
+  async function persistUser() {
+    if (!currentUid() || !state.user) return;
+    const p = state.user.profile;
+    const { error } = await supabase.from("profiles").update({
+      full_name: state.user.name,
+      city: p.city,
+      interests: p.interests,
+      skills: p.skills,
+      days: p.days,
+      radius: p.radius,
+      onboarded: !!p.onboarded,
+      headline: p.headline,
+      campus: p.campus,
+      phone: p.phone,
+      address: p.address,
+      education: p.education,
+      portfolio: p.portfolio,
+      expected_pay: Number(p.expectedPay) || 0,
+      availability: p.availability,
+      work_type: p.workType,
+      cv_path: p.cvUrl || "",
+      experiences: p.experiences || [],
+      saved: state.user.saved || [],
+      plan_type: (state.user.plan && state.user.plan.type) || "free",
+      plan_until: (state.user.plan && state.user.plan.until) || 0,
+      partner_plan_type: (state.user.partnerPlan && state.user.partnerPlan.type) || "free",
+      partner_plan_until: (state.user.partnerPlan && state.user.partnerPlan.until) || 0
+    }).eq("id", currentUid());
+    if (error) toast("Gagal menyimpan profil: " + error.message, "warn");
   }
 
   function myPostedJobs() {
-    if (!state.user) return [];
-    return DATA.jobs.filter(j => j.owner === state.user.email);
+    if (!currentUid()) return [];
+    return DATA.jobs.filter(j => j.owner === currentUid());
+  }
+
+  /* ---------------- pemetaan Supabase -> bentuk UI ---------------- */
+  function rowObject(v) { return Array.isArray(v) ? (v[0] || {}) : (v || {}); }
+
+  function mapProfile(row, authUser) {
+    const p = row || {};
+    const email = (authUser && authUser.email) || "";
+    const cvPath = p.cv_path || "";
+    return ensureProfile({
+      id: p.id,
+      name: p.full_name || email.split("@")[0] || "Pengguna Sifela",
+      email: email,
+      role: p.role === "mitra" ? "mitra" : p.role === "admin" ? "admin" : "pencari",
+      isVerified: !!p.is_verified,
+      company: {
+        name: p.company_name || "",
+        description: p.company_description || "",
+        website: p.website || "",
+        contact: p.contact || "",
+        documents: p.company_documents || []
+      },
+      profile: {
+        city: p.city || "bandung",
+        interests: p.interests || [],
+        skills: p.skills || [],
+        days: p.days || [],
+        radius: p.radius || 10,
+        onboarded: !!p.onboarded,
+        headline: p.headline || "",
+        campus: p.campus || "",
+        phone: p.phone || "",
+        address: p.address || "",
+        education: p.education || "",
+        portfolio: p.portfolio || "",
+        expectedPay: Number(p.expected_pay) || 0,
+        availability: p.availability || "sesuai-jadwal",
+        workType: p.work_type || "",
+        cvName: cvPath ? cvPath.split("/").pop() : "",
+        cvUrl: cvPath,
+        cvData: "",
+        experiences: p.experiences || []
+      },
+      plan: { type: p.plan_type || "free", until: Number(p.plan_until) || 0 },
+      partnerPlan: {
+        type: p.partner_plan_type || "free",
+        until: Number(p.partner_plan_until) || 0
+      },
+      saved: p.saved || [],
+      applications: []
+    });
+  }
+
+  function mapJob(row) {
+    const r = row || {};
+    const owner = rowObject(r.profiles);
+    const created = r.created_at ? Date.parse(r.created_at) : Date.now();
+    return {
+      id: r.id,
+      title: r.title || "Lowongan",
+      org: owner.company_name || owner.full_name || "Mitra Sifela",
+      cat: r.category || "fnb",
+      type: r.employment_type || "shift",
+      city: r.city || "bandung",
+      area: r.area || r.location || "",
+      lat: Number(r.lat) || -6.9175,
+      lng: Number(r.lng) || 107.6191,
+      pay: Number(r.pay || r.salary_min) || 0,
+      unit: r.unit || "jam",
+      hours: Number(r.hours) || 0,
+      days: r.work_days || [],
+      start: r.start_time || "",
+      end: r.end_time || "",
+      slots: Number(r.slots) || 1,
+      skills: r.skills || [],
+      rating: Number(r.rating) || 0,
+      reviews: Number(r.reviews) || 0,
+      verified: !!owner.is_verified,
+      urgent: false,
+      remote: !!r.remote,
+      posted: Math.max(0, Math.floor((Date.now() - created) / 864e5)),
+      views: Number(r.views) || 0,
+      boosted: !!r.boosted,
+      desc: r.description || "",
+      owner: r.employer_id,
+      status: r.status || "pending",
+      custom: true
+    };
+  }
+
+  function mapApplication(a) {
+    const status = a.status || "pending";
+    return {
+      id: a.id,
+      jobId: a.job_id,
+      at: a.created_at ? Date.parse(a.created_at) : Date.now(),
+      status: status === "pending" ? "sent" : status === "reviewed" ? "review" : status,
+      rawStatus: status,
+      cvUrl: a.cv_url || "",
+      cvName: a.cv_file_name || "",
+      coverLetter: a.cover_letter || "",
+      applicantName: rowObject(a.profiles).full_name || "Pelamar",
+      jobTitle: rowObject(a.jobs).title || "Lowongan"
+    };
+  }
+
+  function publicJobs() {
+    return DATA.jobs.filter(j => j.status === "approved");
+  }
+
+  async function loadJobs() {
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("*, profiles!jobs_employer_id_fkey(company_name, full_name, is_verified)")
+      .order("created_at", { ascending: false });
+    if (error) { toast("Gagal memuat lowongan: " + error.message, "warn"); return; }
+    DATA.jobs = (data || []).map(mapJob);
+    if ($("#stat-jobs")) $("#stat-jobs").textContent = publicJobs().length;
+  }
+
+  async function loadMyApplications() {
+    if (!currentUid()) { state.applications = []; return; }
+    const { data, error } = await supabase
+      .from("applications")
+      .select("*, jobs!inner(id, title)")
+      .eq("applicant_id", currentUid())
+      .order("created_at", { ascending: false });
+    if (error) { toast("Gagal memuat lamaran: " + error.message, "warn"); return; }
+    state.applications = (data || []).map(mapApplication);
+    if (state.user) state.user.applications = state.applications;
+  }
+
+  async function loadEmployerApplications() {
+    if (!currentUid()) return [];
+    const { data, error } = await supabase
+      .from("applications")
+      .select("*, profiles!applications_applicant_id_fkey(full_name), jobs!inner(id, title, employer_id)")
+      .eq("jobs.employer_id", currentUid())
+      .order("created_at", { ascending: false });
+    if (error) { toast("Gagal memuat pelamar: " + error.message, "warn"); return []; }
+    state.employerApplications = (data || []).map(mapApplication);
+    return state.employerApplications;
+  }
+
+  async function loadAdminData() {
+    const mitra = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "mitra")
+      .order("created_at", { ascending: false });
+    const jobs = await supabase
+      .from("jobs")
+      .select("*, profiles!jobs_employer_id_fkey(company_name, full_name)")
+      .in("status", ["pending", "rejected"])
+      .order("created_at", { ascending: false });
+    state.admin = {
+      mitra: mitra.error ? [] : (mitra.data || []),
+      jobs: jobs.error ? [] : (jobs.data || []).map(mapJob)
+    };
   }
 
   /* ---------------- premium ---------------- */
@@ -346,7 +498,7 @@
 
   function getFiltered() {
     const f = state.filters;
-    let list = DATA.jobs.slice();
+    let list = publicJobs();
 
     list = list.filter(j => j.remote ? true : j.city === f.city);
     list = list.filter(j => j.remote || distanceTo(j) <= f.radius);
@@ -394,6 +546,7 @@
      RENDER — sidebar
      ============================================================ */
   function renderSidebar() {
+    if (!state.user) return;
     const f = state.filters;
 
     const citySel = $("#filter-city");
@@ -410,7 +563,7 @@
     if (isPremium()) {
       $("#radius-hint").innerHTML = "Jangkauan penuh aktif (maks. " + MAX_RADIUS + " km).";
     } else {
-      const beyond = DATA.jobs.filter(j =>
+      const beyond = publicJobs().filter(j =>
         !j.remote && j.city === f.city && distanceTo(j) > f.radius).length;
       $("#radius-hint").innerHTML = beyond
         ? '<b>' + beyond + " lowongan</b> di luar " + f.radius +
@@ -445,7 +598,7 @@
 
   function renderReachBars() {
     const f = state.filters;
-    const cityJobs = DATA.jobs.filter(j => j.city === f.city);
+    const cityJobs = publicJobs().filter(j => j.city === f.city);
     const bands = [
       { label: "<2 km", max: 2 },
       { label: "2–5", max: 5 },
@@ -510,7 +663,7 @@
           "<span>🗓 " + daysText(job) + "</span>" +
           (timeText(job) ? "<span>⏰ " + timeText(job) + "</span>" : "") +
           (job.hours ? "<span>⏱ " + job.hours + " jam</span>" : "") +
-          '<span>⭐ ' + job.rating + "</span>" +
+          (job.reviews > 0 ? "<span>⭐ " + job.rating + "</span>" : "") +
           (job.slots > 1 ? "<span>👥 " + job.slots + " slot</span>" : "") +
         "</div>" +
         '<div class="job-tags">' + (job.skills || []).slice(0, 4).map(t => '<span class="tag">' + esc(t) + "</span>").join("") + "</div>" +
@@ -532,12 +685,15 @@
     else if (state.tab === "profil") renderProfil();
     else if (state.tab === "premium") renderPremium();
     else if (state.tab === "mitra") renderMitra();
+    else if (state.tab === "admin") renderAdmin();
     else if (state.tab === "checkout") renderCheckout();
     else if (state.tab === "sukses") renderSuccess();
 
     $$(".appnav-item").forEach(b => {
       b.classList.toggle("active", b.dataset.appNav === state.tab);
     });
+    const adminNav = $("#admin-nav");
+    if (adminNav) adminNav.classList.toggle("hidden", !state.user || state.user.role !== "admin");
     $("#sidebar").style.display = (state.tab === "cari") ? "" : "none";
     $(".app-body").style.gridTemplateColumns = (state.tab === "cari") ? "" : "minmax(0,1fr)";
 
@@ -590,7 +746,7 @@
   function renderRekomendasi() {
     const p = state.user.profile;
     const premium = isPremium();
-    const scored = DATA.jobs
+    const scored = publicJobs()
       .filter(j => j.remote || j.city === p.city)
       .map(j => ({ job: j, s: scoreJob(j) }))
       .sort((a, b) => b.s.total - a.s.total);
@@ -656,8 +812,8 @@
       body = '<div class="app-list">' + apps.map(a => {
         const job = DATA.jobs.find(j => j.id === a.jobId);
         if (!job) return "";
-        const statusCls = a.status === "review" ? "review" : "sent";
-        const statusTxt = a.status === "review" ? "Ditinjau" : "Terkirim";
+        const statusTxt = ({ sent: "Terkirim", review: "Ditinjau", accepted: "Diterima", rejected: "Ditolak" })[a.status] || a.status;
+        const statusCls = a.status === "review" || a.status === "accepted" ? "review" : "sent";
         return '<div class="app-row" data-job="' + job.id + '">' +
           '<div class="job-logo">' + ICONS[job.cat] + "</div>" +
           "<div><strong>" + esc(job.title) + "</strong>" +
@@ -705,11 +861,9 @@
     ];
     const availabilityLabel = (availabilityOptions.find(o => o[0] === p.availability) || ["", "Sesuai jadwal kuliah"])[1];
 
-    const cvInfo = p.cvData
-      ? '<a class="link" href="' + esc(p.cvData) + '" download="' + esc(p.cvName || "CV-Sifela") + '">Unduh CV</a>'
-      : (p.cvUrl
-          ? '<a class="link" href="' + esc(p.cvUrl) + '" target="_blank" rel="noopener">Buka tautan CV</a>'
-          : '<span class="muted-text">Belum ada CV</span>');
+    const cvInfo = p.cvName
+      ? '<span class="muted-text">' + esc(p.cvName) + " · tersimpan di Supabase Storage</span>"
+      : '<span class="muted-text">Belum ada CV</span>';
 
     const card = '<div class="panel">' +
       '<div class="profile-head">' +
@@ -735,7 +889,6 @@
         "</select></label>" +
         '<label class="field"><span>Target upah per jam (Rp)</span><input id="pf-pay" type="number" min="0" step="1000" placeholder="Misal: 25000" value="' + (p.expectedPay || "") + '"></label>' +
         '<label class="field"><span>Portofolio / profil profesional</span><input id="pf-portfolio" type="url" placeholder="Tautan portfolio, LinkedIn, atau GitHub" value="' + esc(p.portfolio || "") + '"></label>' +
-        '<label class="field"><span>Tautan CV</span><input id="pf-cvurl" type="url" placeholder="Tautan Google Drive atau situs" value="' + esc(p.cvUrl || "") + '"></label>' +
         '<label class="field"><span>Radius jangkauan (' + p.radius + " km)</span>" +
           '<input type="range" id="pf-radius" min="1" max="' + (isPremium() ? MAX_RADIUS : FREE.maxRadius) +
           '" value="' + p.radius + '">' +
@@ -743,7 +896,7 @@
       "</div>" +
       '<div class="cv-block">' +
         '<div><strong>Berkas CV</strong><p class="panel-sub">' +
-          (p.cvName ? "Tersimpan: " + esc(p.cvName) + " · " + cvInfo : "Unggah PDF atau gambar (maksimal 700 KB untuk prototipe).") +
+          (p.cvName ? "Tersimpan: " + esc(p.cvName) + " · " + cvInfo : "Unggah PDF atau DOC/DOCX (maksimal 5 MB).") +
         "</p></div>" +
         '<div class="cv-actions"><input type="file" id="pf-cv-file" accept=".pdf,.doc,.docx,image/*">' +
           (p.cvName || p.cvData ? '<button class="btn btn-ghost btn-sm" id="pf-cv-clear">Hapus berkas</button>' : "") +
@@ -881,78 +1034,96 @@
      MITRA / PEMILIK USAHA
      ============================================================ */
   function renderMitra() {
-    const pro = isMitraPro();
+    if (!currentUid() || !state.user || state.user.role !== "mitra") {
+      $("#app-main").innerHTML = '<div class="page-head"><h2>Ruang Mitra</h2></div>' +
+        emptyState("Masuk sebagai mitra",
+          "Daftar sebagai pemilik usaha, unggah legalitas, lalu tunggu verifikasi admin sebelum memasang lowongan.",
+          '<button class="btn btn-primary btn-sm" data-go="auth" data-mode="login">Masuk / Daftar</button>');
+      return;
+    }
+
+    if (state.employerLoadedFor !== currentUid()) {
+      state.employerLoadedFor = currentUid();
+      loadEmployerApplications().then(() => { if (state.tab === "mitra") renderApp(); });
+    }
+
     const jobs = myPostedJobs();
-    const limit = pro ? 10 : FREE_PARTNER_JOBS;
-    const lamaran = (state.user.applications || []).filter(a => jobs.some(j => j.id === a.jobId)).length;
-    const dilihat = jobs.reduce((n, j) => n + (j.views || 0), 0);
+    const approved = jobs.filter(j => j.status === "approved").length;
+    const pending = jobs.filter(j => j.status === "pending").length;
+    const lamaran = (state.employerApplications || []).length;
+    const verified = !!state.user.isVerified;
+    const c = state.user.company || {};
 
     const head = '<div class="page-head page-head-row">' +
-      "<div><h2>Ruang Mitra</h2><p>Pasang info part-time dan freelance. Gratis untuk mulai, berbayar untuk jangkauan lebih luas.</p></div>" +
-      '<button class="btn btn-primary" data-post-job>+ Pasang lowongan</button>' +
-      "</div>";
+      "<div><h2>Ruang Mitra</h2><p>Lowongan ditinjau admin sebelum tayang. Lamaran masuk langsung ke dashboard ini.</p></div>" +
+      '<div class="hero-cta" style="margin:0">' +
+        '<button class="btn btn-outline" data-partner-profile>Profil Usaha</button>' +
+        '<button class="btn btn-primary" data-post-job>+ Pasang lowongan</button>' +
+      "</div></div>";
+
+    const banner = verified
+      ? '<div class="banner banner-ok">✓ <span><strong>Usaha terverifikasi.</strong> Lowongan yang Anda pasang tetap menunggu persetujuan admin sebelum tayang.</span></div>'
+      : '<div class="banner">⏳ <span><strong>Menunggu verifikasi admin.</strong> Lengkapi profil usaha dan dokumen legalitas agar dapat memasang lowongan.</span>' +
+        '<button class="btn btn-outline btn-sm" data-partner-profile>Lengkapi</button></div>';
+
+    const company = '<div class="panel"><h3>Profil usaha</h3>' +
+      '<p class="panel-sub">' + (c.name ? esc(c.name) + " · " + esc(c.contact || "-") : "Belum ada data perusahaan.") + "</p>" +
+      '<p class="panel-sub">Dokumen legalitas: ' + ((c.documents || []).length) + " berkas</p>" +
+      '<button class="btn btn-outline btn-sm" data-partner-profile>Ubah profil &amp; dokumen</button></div>';
 
     const stats = '<div class="mitra-stats">' +
-      '<div class="m-stat"><span>Lowongan aktif</span><b>' + jobs.length + " / " + limit + "</b></div>" +
-      '<div class="m-stat"><span>Dilihat (simulasi)</span><b>' + dilihat + "</b></div>" +
+      '<div class="m-stat"><span>Lowongan tayang</span><b>' + approved + "</b></div>" +
+      '<div class="m-stat"><span>Menunggu moderasi</span><b>' + pending + "</b></div>" +
       '<div class="m-stat"><span>Lamaran masuk</span><b>' + lamaran + "</b></div>" +
       "</div>";
 
-    const banner = pro
-      ? '<div class="banner banner-ok">✨ <span><strong>Mitra Pro aktif hingga ' + esc(mitraUntilText()) +
-        '.</strong> Semua lowonganmu ditonjolkan di pencarian.</span><button class="btn btn-outline btn-sm" data-open-checkout="mitra">Perpanjang</button></div>'
-      : '<div class="banner">🔓 <span><strong>' + FREE_PARTNER_JOBS +
-        ' lowongan gratis.</strong> Butuh lebih banyak, badge “Ditonjolkan”, dan statistik? Upgrade ke Mitra Pro.</span>' +
-        '<button class="btn btn-gold btn-sm" data-open-checkout="mitra">Lihat Pro</button></div>';
+    const statusBadge = j => j.status === "approved"
+      ? '<span class="badge badge-verified">Tayang</span>'
+      : j.status === "rejected"
+        ? '<span class="badge badge-urgent">Ditolak</span>'
+        : '<span class="badge badge-type">Menunggu</span>';
 
-    let list;
-    if (!jobs.length) {
-      list = emptyState("Belum ada lowongan", "Pasang shift part-time, freelance kecil, atau gig harian pertama Anda.",
-        '<button class="btn btn-primary btn-sm" data-post-job>Pasang lowongan</button>');
-    } else {
-      list = '<div class="owner-list">' + jobs.map(j =>
-        '<div class="owner-row">' +
-          '<div class="job-logo">' + ICONS[j.cat] + "</div>" +
-          "<div><strong>" + esc(j.title) + "</strong>" +
-            '<div class="job-org">' + esc(j.org) + " · " + esc(areaText(j)) + " · " + fmtRp(j.pay) + unitLabel(j.unit) + "</div>" +
-            '<div class="owner-tags">' +
-              '<span class="badge badge-type">' + TYPE_LABEL[j.type] + "</span>" +
-              (j.boosted ? '<span class="badge badge-boost">Ditonjolkan</span>' : "") +
-              '<span class="badge badge-verified">' + (j.views || 0) + " dilihat</span>" +
-            "</div></div>" +
-          '<div class="owner-actions">' +
-            '<button class="btn btn-outline btn-sm" data-job="' + j.id + '">Lihat</button>' +
-            '<button class="btn btn-sm ' + (j.boosted ? "btn-outline" : "btn-gold") + '" data-boost="' + j.id + '">' +
-              (j.boosted ? "Berhenti tonjolkan" : "Tonjolkan") + "</button>" +
-            '<button class="btn btn-ghost btn-sm" data-del-job="' + j.id + '">Hapus</button>' +
-          "</div>" +
-        "</div>").join("") + "</div>";
-    }
+    const list = !jobs.length
+      ? emptyState("Belum ada lowongan", "Pasang shift part-time, freelance kecil, atau gig harian pertama Anda.",
+          '<button class="btn btn-primary btn-sm" data-post-job>Pasang lowongan</button>')
+      : '<div class="owner-list">' + jobs.map(j =>
+          '<div class="owner-row">' +
+            '<div class="job-logo">' + ICONS[j.cat] + "</div>" +
+            "<div><strong>" + esc(j.title) + "</strong>" +
+              '<div class="job-org">' + esc(j.area || j.city) + " · " + fmtRp(j.pay) + unitLabel(j.unit) + "</div>" +
+              '<div class="owner-tags">' + statusBadge(j) +
+                '<span class="badge badge-type">' + TYPE_LABEL[j.type] + "</span>" +
+                (j.boosted ? '<span class="badge badge-boost">Ditonjolkan</span>' : "") +
+              "</div></div>" +
+            '<div class="owner-actions">' +
+              '<button class="btn btn-outline btn-sm" data-job="' + j.id + '">Lihat</button>' +
+              '<button class="btn btn-ghost btn-sm" data-del-job="' + j.id + '">Hapus</button>' +
+            "</div>" +
+          "</div>").join("") + "</div>";
 
-    const compare = '<div class="panel"><h3>Gratis vs Mitra Pro</h3>' +
-      '<p class="panel-sub">Memasang lowongan tetap gratis. Yang berbayar hanyalah alat untuk menjangkau lebih banyak orang.</p>' +
-      '<div class="compare-grid">' +
-        '<div class="compare-col"><h4>Gratis</h4><ul class="check-list">' +
-          "<li>" + FREE_PARTNER_JOBS + " lowongan aktif</li>" +
-          "<li>Muncul di pencarian wilayah</li>" +
-          "<li>Kuota lamaran standar</li>" +
-        "</ul></div>" +
-        '<div class="compare-col pro"><h4>Mitra Pro</h4><ul class="check-list">' +
-          "<li>10 lowongan aktif sekaligus</li>" +
-          "<li>Badge & urutan teratas pencarian</li>" +
-          "<li>Statistik pembuka lowongan</li>" +
-          "<li>Verifikasi mitra diprioritaskan</li>" +
-        "</ul></div>" +
-      "</div>" +
-      (pro ? "" : '<button class="btn btn-gold btn-block" data-open-checkout="mitra" style="margin-top:16px">Upgrade ke Mitra Pro</button>') +
-      "</div>";
+    const applicants = !lamaran
+      ? '<div class="panel"><h3>Pelamar masuk</h3><p class="panel-sub">Belum ada lamaran untuk lowongan Anda.</p></div>'
+      : '<div class="panel"><h3>Pelamar masuk</h3><p class="panel-sub">CV dibuka lewat tautan bertanda tangan yang berlaku 1 jam.</p>' +
+        '<div class="app-list">' + state.employerApplications.map(a =>
+          '<div class="app-row">' +
+            "<div><strong>" + esc(a.applicantName) + "</strong>" +
+              '<div class="job-org">' + esc(a.jobTitle) + " · " +
+                new Date(a.at).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) + "</div></div>" +
+            '<span class="app-status">' + esc(a.status) + "</span>" +
+            '<button class="btn btn-outline btn-sm" data-cv="' + esc(a.cvUrl) + '" data-cv-bucket="cvs">Lihat CV</button>' +
+          "</div>").join("") + "</div></div>";
 
-    $("#app-main").innerHTML = head + stats + banner + list + compare;
+    $("#app-main").innerHTML = head + banner + stats + company + list + applicants;
   }
 
   function openPostJob() {
-    if (!isMitraPro() && myPostedJobs().length >= FREE_PARTNER_JOBS) {
-      openPaywall("partnerQuota");
+    if (!state.user || state.user.role !== "mitra" || !currentUid()) {
+      toast("Masuk sebagai mitra terlebih dahulu.", "warn");
+      showView("auth"); setAuthTab("login");
+      return;
+    }
+    if (!state.user.isVerified) {
+      toast("Akun belum diverifikasi admin. Lengkapi legalitas di Profil Usaha.", "warn");
       return;
     }
 
@@ -967,7 +1138,7 @@
 
     openModal(
       '<h3 style="font-size:19px;font-weight:800;margin-bottom:4px">Pasang lowongan</h3>' +
-      '<p class="panel-sub">Gratis untuk ' + (isMitraPro() ? "Mitra Pro" : "pengguna Gratis") + ". Data hanya disimpan di browser ini.</p>" +
+      '<p class="panel-sub">Lowongan akan berstatus <b>pending</b> dan tayang setelah disetujui admin.</p>' +
       '<form id="post-job-form">' +
         '<label class="field"><span>Nama lowongan</span><input name="title" placeholder="Contoh: Barista Shift Pagi" required></label>' +
         '<label class="field"><span>Nama usaha</span><input name="org" value="' + esc(state.user.name) + '" required></label>' +
@@ -1006,7 +1177,7 @@
       b.classList.toggle("active");
     }));
 
-    $("#post-job-form").addEventListener("submit", (ev) => {
+    $("#post-job-form").addEventListener("submit", async (ev) => {
       ev.preventDefault();
       const fd = new FormData(ev.target);
       const city = cityOf(fd.get("city"));
@@ -1018,49 +1189,209 @@
         ? Math.max(1, Math.round((Number(end.slice(0, 2)) * 60 + Number(end.slice(3))) -
             (Number(start.slice(0, 2)) * 60 + Number(start.slice(3)))) / 60)
         : 0;
+      const pay = Number(fd.get("pay"));
 
-      const job = {
-        id: "u" + Date.now(),
+      const payload = {
+        employer_id: currentUid(),
         title: String(fd.get("title")).trim(),
-        org: String(fd.get("org")).trim(),
-        cat: fd.get("cat"), type: fd.get("type"),
-        city: fd.get("city"), area: String(fd.get("area")).trim(),
-        lat: city.lat, lng: city.lng,
-        pay: Number(fd.get("pay")), unit: unit, hours: hours,
-        days: days, start: start, end: end, slots: 1,
-        skills: skills, rating: 5, reviews: 0,
-        verified: false, urgent: false, remote: false,
-        posted: 0, views: 0, boosted: false,
-        desc: String(fd.get("desc")).trim(),
-        owner: state.user.email, custom: true
+        description: String(fd.get("desc")).trim(),
+        category: fd.get("cat"),
+        employment_type: fd.get("type"),
+        status: "pending",
+        city: fd.get("city"),
+        area: String(fd.get("area")).trim(),
+        location: String(fd.get("area")).trim(),
+        lat: city.lat,
+        lng: city.lng,
+        pay: pay,
+        salary_min: pay,
+        unit: unit,
+        hours: hours,
+        work_days: days,
+        start_time: start,
+        end_time: end,
+        slots: 1,
+        skills: skills,
+        rating: 0,
+        reviews: 0,
+        remote: false,
+        views: 0,
+        boosted: false
       };
 
-      DATA.jobs.push(job);
-      savePostedJobs(loadPostedJobs().concat(job));
+      const { error } = await supabase.from("jobs").insert(payload);
+      if (error) { toast("Gagal memasang lowongan: " + error.message, "warn"); return; }
       closeModal();
+      await loadJobs();
       state.tab = "mitra";
       renderApp();
-      toast("Lowongan diterbitkan dan muncul di pencarian 🎉", "ok");
+      toast("Lowongan terkirim. Menunggu persetujuan admin.", "ok");
     });
   }
 
-  function toggleBoost(jobId) {
+  async function toggleBoost(jobId) {
     if (!isMitraPro()) { openPaywall("boost"); return; }
     const job = DATA.jobs.find(j => j.id === jobId);
     if (!job) return;
+    const { error } = await supabase.from("jobs").update({ boosted: !job.boosted }).eq("id", jobId);
+    if (error) { toast("Gagal mengubah penonjolan: " + error.message, "warn"); return; }
     job.boosted = !job.boosted;
-    savePostedJobs(loadPostedJobs().map(j => j.id === jobId ? job : j));
     renderApp();
     toast(job.boosted ? "Lowongan ditonjolkan" : "Penonjolan dimatikan", "ok");
   }
 
-  function deleteJob(jobId) {
+  async function deleteJob(jobId) {
     if (!window.confirm("Hapus lowongan ini?")) return;
-    const job = DATA.jobs.find(j => j.id === jobId);
-    if (job) DATA.jobs.splice(DATA.jobs.indexOf(job), 1);
-    savePostedJobs(loadPostedJobs().filter(j => j.id !== jobId));
+    const { error } = await supabase.from("jobs").delete().eq("id", jobId);
+    if (error) { toast("Gagal menghapus: " + error.message, "warn"); return; }
+    await loadJobs();
     renderApp();
     toast("Lowongan dihapus");
+  }
+
+  /* Profil usaha + unggah dokumen legalitas ke bucket company_docs. */
+  function openPartnerProfile() {
+    const c = state.user.company || {};
+    const docs = (c.documents || []).map((d, i) =>
+      "<li>" + esc(d.name) + ' <button class="link" data-doc-index="' + i + '">hapus</button></li>').join("") || "<li>Belum ada dokumen.</li>";
+    openModal(
+      '<h3 style="font-size:19px;font-weight:800;margin-bottom:4px">Profil usaha</h3>' +
+      '<p class="panel-sub">Dokumen legalitas/NIB tersimpan privat dan hanya bisa dilihat admin.</p>' +
+      '<form id="partner-form">' +
+        '<label class="field"><span>Nama perusahaan / usaha</span><input name="company_name" value="' + esc(c.name || "") + '" required></label>' +
+        '<label class="field"><span>Deskripsi usaha</span><textarea name="company_description" rows="3" style="width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);font-family:inherit;font-size:14px">' + esc(c.description || "") + '</textarea></label>' +
+        '<div class="field-row">' +
+          '<label class="field"><span>Website</span><input name="website" value="' + esc(c.website || "") + '" placeholder="https://..."></label>' +
+          '<label class="field"><span>Kontak (email/telepon)</span><input name="contact" value="' + esc(c.contact || "") + '" required></label>' +
+        "</div>" +
+        '<label class="field"><span>Dokumen legalitas / NIB (PDF, JPG, PNG — maks. 10 MB)</span>' +
+          '<input type="file" name="legal" accept=".pdf,.jpg,.jpeg,.png"></label>' +
+        '<ul class="check-list">' + docs + "</ul>" +
+        '<div class="ob-actions"><button type="button" class="btn btn-outline" data-close-modal>Batal</button>' +
+        '<button type="submit" class="btn btn-primary">Simpan profil usaha</button></div>' +
+      "</form>",
+      { name: "partner", wide: true }
+    );
+
+    $$("#modal-sheet [data-doc-index]").forEach(btn => btn.addEventListener("click", async () => {
+      const index = Number(btn.dataset.docIndex);
+      const doc = state.user.company.documents[index];
+      if (!doc) return;
+      await supabase.storage.from("company_docs").remove([doc.path]);
+      const next = state.user.company.documents.filter((_, i) => i !== index);
+      await supabase.from("profiles").update({ company_documents: next }).eq("id", currentUid());
+      state.user.company.documents = next;
+      openPartnerProfile();
+    }));
+
+    $("#partner-form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const fd = new FormData(ev.target);
+      let documents = (state.user.company.documents || []).slice();
+      const file = fd.get("legal");
+      if (file && file.size) {
+        if (file.size > 10 * 1024 * 1024) { toast("Dokumen terlalu besar (maks. 10 MB).", "warn"); return; }
+        const path = currentUid() + "/" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const up = await supabase.storage.from("company_docs").upload(path, file, { upsert: true });
+        if (up.error) { toast("Gagal unggah dokumen: " + up.error.message, "warn"); return; }
+        documents.push({ name: file.name, path: path });
+      }
+      const { error } = await supabase.from("profiles").update({
+        company_name: String(fd.get("company_name")).trim(),
+        company_description: String(fd.get("company_description")).trim(),
+        website: String(fd.get("website")).trim(),
+        contact: String(fd.get("contact")).trim(),
+        company_documents: documents
+      }).eq("id", currentUid());
+      if (error) { toast("Gagal menyimpan profil usaha: " + error.message, "warn"); return; }
+      state.user.company = {
+        name: String(fd.get("company_name")).trim(),
+        description: String(fd.get("company_description")).trim(),
+        website: String(fd.get("website")).trim(),
+        contact: String(fd.get("contact")).trim(),
+        documents: documents
+      };
+      closeModal();
+      renderApp();
+      toast("Profil usaha disimpan. Menunggu verifikasi admin.", "ok");
+    });
+  }
+
+  /* ============================================================
+     DASHBOARD MODERASI ADMIN
+     ============================================================ */
+  function renderAdmin() {
+    if (!currentUid() || !state.user || state.user.role !== "admin") {
+      $("#app-main").innerHTML = '<div class="page-head"><h2>Moderasi Admin</h2></div>' +
+        emptyState("Akses khusus admin", "Hanya akun dengan role admin yang dapat memverifikasi mitra dan menyetujui lowongan.", "");
+      return;
+    }
+    if (state.adminLoadedFor !== currentUid()) {
+      state.adminLoadedFor = currentUid();
+      loadAdminData().then(() => { if (state.tab === "admin") renderApp(); });
+    }
+
+    const mitraRows = state.admin.mitra.length
+      ? '<div class="app-list">' + state.admin.mitra.map(p => {
+          const docs = p.company_documents || [];
+          return '<div class="app-row">' +
+            "<div><strong>" + esc(p.company_name || p.full_name || "Mitra") + "</strong>" +
+              '<div class="job-org">' + esc(p.contact || "-") + " · " + docs.length + " dokumen</div>" +
+              '<div class="job-tags">' + docs.map(d =>
+                '<button class="tag link" data-doc="' + esc(d.path) + '" data-doc-bucket="company_docs">' + esc(d.name) + "</button>").join("") + "</div>" +
+            "</div>" +
+            (p.is_verified
+              ? '<span class="app-status">Terverifikasi</span>'
+              : '<button class="btn btn-primary btn-sm" data-verify-mitra="' + p.id + '">Verifikasi Mitra</button>') +
+            "</div>";
+        }).join("") + "</div>"
+      : emptyState("Belum ada mitra mendaftar", "Mitra baru akan muncul di sini setelah mendaftar.", "");
+
+    const jobRows = state.admin.jobs.length
+      ? '<div class="app-list">' + state.admin.jobs.map(j =>
+          '<div class="app-row">' +
+            "<div><strong>" + esc(j.title) + "</strong>" +
+              '<div class="job-org">' + esc(j.org) + " · " + esc(j.area || j.city) + " · " + fmtRp(j.pay) + unitLabel(j.unit) + "</div>" +
+              '<p class="panel-sub">' + esc((j.desc || "").slice(0, 160)) + "</p></div>" +
+            '<div class="owner-actions">' +
+              '<button class="btn btn-outline btn-sm" data-job="' + j.id + '">Lihat</button>' +
+              '<button class="btn btn-primary btn-sm" data-moderate-job="' + j.id + '" data-status="approved">Setujui</button>' +
+              '<button class="btn btn-ghost btn-sm" data-moderate-job="' + j.id + '" data-status="rejected">Tolak</button>' +
+            "</div></div>").join("") + "</div>"
+      : emptyState("Tidak ada lowongan menunggu", "Lowongan baru dari mitra masuk ke sini dengan status pending.", "");
+
+    $("#app-main").innerHTML =
+      '<div class="page-head"><h2>Moderasi Admin</h2>' +
+      "<p>Verifikasi legalitas mitra dan putuskan lowongan sebelum tayang ke publik.</p></div>" +
+      '<div class="panel"><h3>Mitra menunggu verifikasi</h3>' + mitraRows + "</div>" +
+      '<div class="panel" style="margin-top:14px"><h3>Lowongan menunggu moderasi</h3>' + jobRows + "</div>";
+  }
+
+  async function verifyMitra(id) {
+    const { error } = await supabase.from("profiles").update({ is_verified: true }).eq("id", id);
+    if (error) { toast("Gagal memverifikasi: " + error.message, "warn"); return; }
+    state.adminLoadedFor = null;
+    await loadJobs();
+    await loadAdminData();
+    renderApp();
+    toast("Mitra terverifikasi", "ok");
+  }
+
+  async function moderateJob(id, status) {
+    const { error } = await supabase.from("jobs").update({ status: status }).eq("id", id);
+    if (error) { toast("Gagal memperbarui lowongan: " + error.message, "warn"); return; }
+    state.adminLoadedFor = null;
+    await loadJobs();
+    await loadAdminData();
+    renderApp();
+    toast(status === "approved" ? "Lowongan disetujui dan tayang" : "Lowongan ditolak", "ok");
+  }
+
+  async function openSignedDoc(bucket, path) {
+    if (!path) return;
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+    if (error || !data) { toast("Gagal membuka berkas: " + (error ? error.message : "tidak tersedia"), "warn"); return; }
+    window.open(data.signedUrl, "_blank", "noopener");
   }
 
   /* ============================================================
@@ -1287,7 +1618,9 @@
         (timeText(job) ? '<div class="jd-cell"><span>Jam</span><b>' + timeText(job) + "</b></div>" : "") +
         '<div class="jd-cell"><span>Durasi</span><b>' + (job.hours ? job.hours + " jam/shift" : "Per proyek") + "</b></div>" +
         '<div class="jd-cell"><span>Slot tersedia</span><b>' + job.slots + " orang</b></div>" +
-        '<div class="jd-cell"><span>Rating mitra</span><b>⭐ ' + job.rating + " (" + job.reviews + " ulasan)</b></div>" +
+        (job.reviews > 0
+          ? '<div class="jd-cell"><span>Rating mitra</span><b>⭐ ' + job.rating + " (" + job.reviews + " ulasan)</b></div>"
+          : "") +
       "</div>" +
       '<p class="jd-desc">' + esc(job.desc) + "</p>" +
       (isConflict(job) && !isPremium()
@@ -1300,18 +1633,15 @@
         '<button class="btn btn-outline" id="jd-save">' + (saved ? "★ Tersimpan" : "☆ Simpan") + "</button>" +
         '<button class="btn btn-outline" id="jd-contact">💬 Kontak</button>' +
       "</div>" +
-      '<p class="paywall-foot">Data contoh untuk prototipe — bukan lowongan nyata.</p>',
+      '<p class="paywall-foot">Lowongan dari mitra terverifikasi dan dimoderasi admin.</p>',
       { name: "job", wide: true }
     );
 
     $("#jd-apply").addEventListener("click", () => {
+      if (!currentUid()) { closeModal(); showView("auth"); setAuthTab("login"); return; }
       if (!canApplyMore()) { closeModal(); openPaywall("apply"); return; }
-      state.user.applications = state.user.applications || [];
-      state.user.applications.push({ jobId: job.id, at: Date.now(), status: "sent" });
-      persistUser();
-      closeModal();
-      renderApp();
-      toast("Lamaran terkirim ke " + job.org, "ok");
+      if (applied) return;
+      openApplyForm(job);
     });
 
     $("#jd-save").addEventListener("click", () => {
@@ -1330,6 +1660,52 @@
 
     const scoreBtn = $("#modal-sheet [data-open-premium]");
     if (scoreBtn) scoreBtn.addEventListener("click", () => { closeModal(); openPaywall("score"); });
+  }
+
+  /* Lamaran nyata: unggah CV ke bucket cvs lalu simpan baris applications. */
+  function openApplyForm(job) {
+    openModal(
+      '<h3 style="font-size:19px;font-weight:800;margin-bottom:4px">Lamar: ' + esc(job.title) + "</h3>" +
+      '<p class="panel-sub">CV dikirim langsung ke mitra pemilik lowongan.</p>' +
+      '<form id="apply-form">' +
+        '<label class="field"><span>CV (PDF/DOC/DOCX, maks. 5 MB)</span>' +
+          '<input type="file" name="cv" accept=".pdf,.doc,.docx,application/pdf" required></label>' +
+        '<label class="field"><span>Surat singkat / pesan (opsional)</span>' +
+          '<textarea name="cover" rows="4" style="width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);font-family:inherit;font-size:14px" placeholder="Ceritakan singkat mengapa Anda cocok"></textarea></label>' +
+        '<div class="ob-actions"><button type="button" class="btn btn-outline" data-close-modal>Batal</button>' +
+        '<button type="submit" class="btn btn-primary">Kirim lamaran</button></div>' +
+      "</form>",
+      { name: "apply", wide: true }
+    );
+
+    $("#apply-form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const fd = new FormData(ev.target);
+      const file = fd.get("cv");
+      if (!file || !file.size) { toast("Pilih berkas CV terlebih dahulu.", "warn"); return; }
+      if (file.size > 5 * 1024 * 1024) { toast("CV terlalu besar (maks. 5 MB).", "warn"); return; }
+      const path = currentUid() + "/" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const up = await supabase.storage.from("cvs").upload(path, file, { upsert: true });
+      if (up.error) { toast("Gagal unggah CV: " + up.error.message, "warn"); return; }
+
+      const { error } = await supabase.from("applications").insert({
+        job_id: job.id,
+        applicant_id: currentUid(),
+        cv_url: path,
+        cv_file_name: file.name,
+        cover_letter: String(fd.get("cover") || "").trim(),
+        status: "pending"
+      });
+      if (error) {
+        await supabase.storage.from("cvs").remove([path]);
+        toast("Gagal mengirim lamaran: " + error.message, "warn");
+        return;
+      }
+      closeModal();
+      await loadMyApplications();
+      renderApp();
+      toast("Lamaran terkirim ke " + job.org, "ok");
+    });
   }
 
   /* ---------------- onboarding ---------------- */
@@ -1449,8 +1825,7 @@
   function guestUser() {
     return {
       name: "Pengguna Tamu",
-      email: "tamu@sifela.id",
-      pass: hashPass("tamu1234"),
+      email: "",
       role: "pencari",
       profile: defaultProfile("bandung"),
       plan: { type: "free", until: 0 },
@@ -1522,123 +1897,51 @@
     else if (fresh) toast("Akun mitra siap. Pasang lowongan pertama Anda 🏪", "ok");
   }
 
-  function login(email, password) {
-    const users = loadUsers();
-    const u = users[email.toLowerCase().trim()];
-    if (!u) return "Email belum terdaftar.";
-    if (u.pass !== hashPass(password)) return "Kata sandi salah.";
-    state.user = ensureProfile(u);
-    sessionLogin(u.email);
+  async function login(email, password) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: String(email || "").trim(),
+      password: String(password || "")
+    });
+    if (error) {
+      return error.message === "Invalid login credentials"
+        ? "Email atau kata sandi salah."
+        : error.message;
+    }
     return null;
   }
 
-  function register(data) {
-    const users = loadUsers();
-    const email = data.email.toLowerCase().trim();
-    if (users[email]) return "Email sudah terdaftar. Coba masuk.";
-    const user = {
-      name: data.name.trim(),
-      email: email,
-      pass: hashPass(data.password),
-      role: data.role || "pencari",
-      profile: defaultProfile(data.city),
-      plan: { type: "free", until: 0 },
-      partnerPlan: { type: "free", until: 0 },
-      saved: [],
-      applications: []
-    };
-    users[email] = user;
-    saveUsers(users);
-    state.user = user;
-    sessionLogin(email);
+  async function register(data) {
+    const email = String(data.email || "").toLowerCase().trim();
+    const { data: result, error } = await supabase.auth.signUp({
+      email,
+      password: String(data.password || ""),
+      options: {
+        data: {
+          full_name: String(data.name || "").trim(),
+          role: data.role === "mitra" ? "mitra" : "pelamar"
+        }
+      }
+    });
+    if (error) return error.message;
+    if (!result.session) return "Akun dibuat. Silakan masuk (konfirmasi email mungkin diperlukan).";
+
+    const { error: upErr } = await supabase.from("profiles").update({
+      full_name: String(data.name || "").trim(),
+      city: data.city
+    }).eq("id", result.user.id);
+    if (upErr) return upErr.message;
     return null;
   }
 
-  function logout() {
-    sessionLogout();
+  async function logout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) toast("Gagal keluar: " + error.message, "warn");
+    state.session = null;
     state.user = null;
+    state.applications = [];
+    DATA.jobs = [];
     closeModal();
     showView("landing");
-  }
-
-  function demoLogin(kind) {
-    const email = kind === "premium" ? "plus@sifela.id"
-      : kind === "mitra" ? "mitra@sifela.id" : "demo@sifela.id";
-    const users = loadUsers();
-
-    if (!users[email]) {
-      users[email] = {
-        name: kind === "premium" ? "Rizki Plus" : kind === "mitra" ? "Kopi Senja Demo" : "Rizki Demo",
-        email: email,
-        pass: hashPass("demo1234"),
-        role: kind === "mitra" ? "mitra" : "pencari",
-        profile: {
-          city: "bandung",
-          interests: ["fnb", "kreatif", "konten"],
-          skills: ["Barista", "Komunikasi", "Desain Grafis", "Canva", "Content Planning"],
-          days: ["sen", "rab", "jum", "sab"],
-          radius: kind === "premium" ? 25 : 10,
-          onboarded: true,
-          headline: kind === "mitra" ? "Pemilik usaha kopi & kafe" : "Mahasiswa yang cari pengalaman",
-          campus: "Universitas Brawijaya",
-          phone: "0812-3456-7890",
-          address: "Jl. Gatot Subroto No. 12, Bandung",
-          education: "S1 Manajemen, semester 6",
-          portfolio: "https://www.linkedin.com/in/contoh-sifela",
-          expectedPay: 25000,
-          availability: "sesuai-jadwal",
-          workType: "fnb",
-          cvName: "CV-Contoh-Sifela.pdf",
-          cvUrl: "",
-          cvData: "",
-          experiences: [{
-            role: "Barista magang",
-            org: "Kopi Senja",
-            period: "Jan 2025 – Apr 2025",
-            type: "fnb",
-            desc: "Menyiapkan minuman dan melayani pelanggan pada shift pagi."
-          }]
-        },
-        plan: kind === "premium"
-          ? { type: "plus", until: Date.now() + 30 * 864e5, plan: "bulanan" }
-          : { type: "free", until: 0 },
-        partnerPlan: { type: "free", until: 0 },
-        saved: [],
-        applications: []
-      };
-      saveUsers(users);
-    }
-
-    // Normalisasi paket tiap kali tombol demo dipakai, supaya akun demo
-    // tidak "terlanjur" Plus setelah mencoba alur checkout.
-    const user = ensureProfile(users[email]);
-    if (kind === "premium") {
-      const stillActive = user.plan && user.plan.type === "plus" && user.plan.until > Date.now();
-      if (!stillActive) user.plan = { type: "plus", until: Date.now() + 30 * 864e5, plan: "bulanan" };
-    } else {
-      user.plan = { type: "free", until: 0 };
-    }
-    user.role = kind === "mitra" ? "mitra" : (user.role || "pencari");
-    if (kind === "mitra") user.partnerPlan = { type: "free", until: 0 };
-    saveUsers(users);
-
-    if (kind === "mitra" && !DATA.jobs.some(j => j.owner === email)) {
-      const sample = DATA.jobs.find(j => j.id === "j01");
-      if (sample) {
-        const demoJob = Object.assign({}, sample, {
-          id: "demo-m1", title: "Barista Shift Pagi (contoh)", owner: email,
-          custom: true, views: 128, posted: 0, boosted: false
-        });
-        DATA.jobs.push(demoJob);
-        savePostedJobs(loadPostedJobs().concat(demoJob));
-      }
-    }
-
-    state.user = user;
-    sessionLogin(email);
-    enterApp();
-    toast(kind === "mitra" ? "Masuk sebagai akun Mitra" :
-      kind === "premium" ? "Masuk sebagai akun Plus" : "Masuk sebagai akun Gratis", "ok");
   }
 
   /* ============================================================
@@ -1666,12 +1969,10 @@
       const authTab = t.closest("[data-auth-tab]");
       if (authTab) { ev.preventDefault(); setAuthTab(authTab.dataset.authTab); return; }
 
-      const demoBtn = t.closest("[data-demo-login]");
-      if (demoBtn) { ev.preventDefault(); demoLogin(demoBtn.dataset.demoLogin); return; }
-
       const navBtn = t.closest("[data-app-nav]");
       if (navBtn) {
         ev.preventDefault();
+        if (!state.user) { showView("auth"); setAuthTab("login"); return; }
         state.tab = navBtn.dataset.appNav;
         if (state.tab === "cari") { $("#sidebar").style.display = ""; }
         renderApp();
@@ -1781,6 +2082,21 @@
       const delBtn = t.closest("[data-del-job]");
       if (delBtn) { ev.stopPropagation(); deleteJob(delBtn.dataset.delJob); return; }
 
+      const partnerBtn = t.closest("[data-partner-profile]");
+      if (partnerBtn) { openPartnerProfile(); return; }
+
+      const verifyBtn = t.closest("[data-verify-mitra]");
+      if (verifyBtn) { verifyMitra(verifyBtn.dataset.verifyMitra); return; }
+
+      const modBtn = t.closest("[data-moderate-job]");
+      if (modBtn) { moderateJob(modBtn.dataset.moderateJob, modBtn.dataset.status); return; }
+
+      const docBtn = t.closest("[data-doc]");
+      if (docBtn) { openSignedDoc(docBtn.dataset.docBucket || "company_docs", docBtn.dataset.doc); return; }
+
+      const cvBtn = t.closest("[data-cv]");
+      if (cvBtn) { openSignedDoc(cvBtn.dataset.cvBucket || "cvs", cvBtn.dataset.cv); return; }
+
       const sortSel = t.closest("#sort-select");
       if (sortSel) return;
 
@@ -1823,10 +2139,16 @@
       }
 
       if (t.closest("#pf-cv-clear")) {
+        const oldPath = state.user.profile.cvUrl;
         state.user.profile.cvName = "";
         state.user.profile.cvUrl = "";
         state.user.profile.cvData = "";
-        persistUser(); renderProfil(); toast("Berkas CV dihapus.");
+        (async () => {
+          if (oldPath) await supabase.storage.from("cvs").remove([oldPath]);
+          await persistUser();
+          renderProfil();
+          toast("Berkas CV dihapus.");
+        })();
         return;
       }
 
@@ -1845,7 +2167,6 @@
         p.workType = val("pf-worktype");
         p.expectedPay = Number(val("pf-pay")) || 0;
         p.portfolio = val("pf-portfolio");
-        p.cvUrl = val("pf-cvurl");
         p.radius = Number(val("pf-radius")) || p.radius;
         persistUser();
         state.filters.city = p.city;
@@ -1884,18 +2205,22 @@
       if (t.id === "pf-cv-file") {
         const file = t.files && t.files[0];
         if (!file) return;
-        if (file.size > 700 * 1024) {
-          toast("Berkas terlalu besar. Gunakan file di bawah 700 KB.", "warn");
+        if (!currentUid()) { toast("Masuk terlebih dahulu untuk menyimpan CV.", "warn"); return; }
+        if (file.size > 5 * 1024 * 1024) {
+          toast("Berkas terlalu besar. Gunakan file di bawah 5 MB.", "warn");
           return;
         }
-        const reader = new FileReader();
-        reader.onload = () => {
+        (async () => {
+          const path = currentUid() + "/profil-" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const up = await supabase.storage.from("cvs").upload(path, file, { upsert: true });
+          if (up.error) { toast("Gagal unggah CV: " + up.error.message, "warn"); return; }
           state.user.profile.cvName = file.name;
-          state.user.profile.cvData = String(reader.result || "");
-          persistUser(); renderProfil();
-          toast("CV berhasil disimpan di profil.", "ok");
-        };
-        reader.readAsDataURL(file);
+          state.user.profile.cvUrl = path;
+          state.user.profile.cvData = "";
+          await persistUser();
+          renderProfil();
+          toast("CV berhasil disimpan di Supabase Storage.", "ok");
+        })();
       }
     });
 
@@ -1910,28 +2235,36 @@
     });
 
     // forms
-    $("#form-login").addEventListener("submit", (ev) => {
+    $("#form-login").addEventListener("submit", async (ev) => {
       ev.preventDefault();
       const fd = new FormData(ev.target);
-      const err = login(fd.get("email"), fd.get("password"));
       const errEl = $('[data-error-for="login"]');
+      errEl.textContent = "Memeriksa akun…";
+      const err = await login(fd.get("email"), fd.get("password"));
       errEl.textContent = err || "";
-      if (!err) enterApp();
+      if (!err) {
+        await restoreSession();
+        enterApp();
+      }
     });
 
-    $("#form-register").addEventListener("submit", (ev) => {
+    $("#form-register").addEventListener("submit", async (ev) => {
       ev.preventDefault();
       const fd = new FormData(ev.target);
-      const err = register({
+      const errEl = $('[data-error-for="register"]');
+      errEl.textContent = "Membuat akun…";
+      const err = await register({
         name: fd.get("name"),
         email: fd.get("email"),
         password: fd.get("password"),
         city: fd.get("city"),
         role: fd.get("role")
       });
-      const errEl = $('[data-error-for="register"]');
       errEl.textContent = err || "";
-      if (!err) finishRegistration(true);
+      if (!err) {
+        await restoreSession();
+        finishRegistration(true);
+      }
     });
 
     // modal backdrop close
@@ -1962,45 +2295,59 @@
   /* ============================================================
      INIT
      ============================================================ */
-  function init() {
-    // siapa tahu datanya rusak
+  async function restoreSession() {
+    const { data } = await supabase.auth.getSession();
+    state.session = data.session || null;
+    if (!state.session) {
+      state.user = null;
+      state.applications = [];
+      return null;
+    }
+
+    const uid = state.session.user.id;
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", uid)
+      .maybeSingle();
+    if (error || !profile) {
+      toast("Profil belum tersedia: " + (error ? error.message : "data kosong"), "warn");
+      return null;
+    }
+
+    state.user = mapProfile(profile, state.session.user);
+    state.employerLoadedFor = null;
+    state.adminLoadedFor = null;
+    await loadJobs();
+    await loadMyApplications();
+    return state.user;
+  }
+
+  async function init() {
     if (!dataOk()) {
       document.body.innerHTML =
         '<div style="padding:40px;font-family:sans-serif">' +
-        "<h2>Data demo gagal dimuat</h2><p>Pastikan <code>assets/data.js</code> ada dan tidak rusak.</p></div>";
+        "<h2>Data dasar gagal dimuat</h2><p>Pastikan <code>assets/data.js</code> ada dan tidak rusak.</p></div>";
       return;
     }
 
-    // gabungkan lowongan buatan mitra yang tersimpan di browser
-    mergePostedJobs();
-
-    // isi select kota di form registrasi
     $("#reg-city").innerHTML = DATA.cities.map(c =>
       '<option value="' + c.id + '">' + c.name + "</option>").join("");
-
-    // angka di landing mengikuti dataset, bukan hardcode
-    if ($("#stat-jobs")) $("#stat-jobs").textContent = DATA.jobs.length;
     if ($("#stat-cities")) $("#stat-cities").textContent = DATA.cities.length;
     if ($("#stat-types")) $("#stat-types").textContent = DATA.types.length;
 
     bindEvents();
     setAuthTab("login");
+    supabase.auth.onAuthStateChange((_event, session) => { state.session = session || null; });
 
-    const email = sessionEmail();
-    if (email) {
-      const users = loadUsers();
-      if (users[email]) {
-        state.user = ensureProfile(users[email]);
-        persistUser();
-        enterApp();
-        return;
-      }
-    }
+    await restoreSession();
+    await loadJobs();
+    if (state.user) { enterApp(); return; }
     showView("landing");
   }
 
   function dataOk() {
-    return DATA && Array.isArray(DATA.jobs) && DATA.jobs.length > 0 &&
+    return DATA && Array.isArray(DATA.jobs) &&
       Array.isArray(DATA.cities) && Array.isArray(DATA.categories);
   }
 

@@ -1,0 +1,45 @@
+-- Kolom tambahan yang dipakai antarmuka Sifela.id.
+-- Melengkapi skema dasar tanpa mengubah kebijakan RLS yang sudah ada.
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS city text NOT NULL DEFAULT 'bandung',
+  ADD COLUMN IF NOT EXISTS interests text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS skills text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS days text[] NOT NULL DEFAULT '{sen,sel,rab,kam,jum}',
+  ADD COLUMN IF NOT EXISTS radius integer NOT NULL DEFAULT 10,
+  ADD COLUMN IF NOT EXISTS onboarded boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS headline text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS campus text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS phone text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS address text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS education text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS portfolio text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS expected_pay numeric(14, 2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS availability text NOT NULL DEFAULT 'sesuai-jadwal',
+  ADD COLUMN IF NOT EXISTS work_type text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS cv_path text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS experiences jsonb NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS saved uuid[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS plan_type text NOT NULL DEFAULT 'free',
+  ADD COLUMN IF NOT EXISTS plan_until bigint NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS partner_plan_type text NOT NULL DEFAULT 'free',
+  ADD COLUMN IF NOT EXISTS partner_plan_until bigint NOT NULL DEFAULT 0;
+
+ALTER TABLE public.jobs
+  ADD COLUMN IF NOT EXISTS area text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS city text NOT NULL DEFAULT 'bandung',
+  ADD COLUMN IF NOT EXISTS lat double precision NOT NULL DEFAULT -6.9175,
+  ADD COLUMN IF NOT EXISTS lng double precision NOT NULL DEFAULT 107.6191,
+  ADD COLUMN IF NOT EXISTS pay numeric(14, 2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS unit text NOT NULL DEFAULT 'jam',
+  ADD COLUMN IF NOT EXISTS hours integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS work_days text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS start_time text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS end_time text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS slots integer NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS skills text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS rating numeric(3, 1) NOT NULL DEFAULT 5.0,
+  ADD COLUMN IF NOT EXISTS reviews integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS remote boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS views integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS boosted boolean NOT NULL DEFAULT false;
