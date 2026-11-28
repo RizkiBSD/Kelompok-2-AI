@@ -64,12 +64,18 @@ import SIFELA_DATA from "./data.js";
     checkout: { product: "plus", planId: "bulanan", method: "qris" },
     chat: { threads: [], messages: [], names: {}, active: null },
     notifications: [],
-    realtime: null
+    realtime: null,
+    detailId: null
   };
 
   /* ---------------- helper ---------------- */
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  const DEFAULT_TITLE = document.title;
+  const DEFAULT_DESCRIPTION =
+    ($('meta[name="description"]') && $('meta[name="description"]').content) || "";
+  const DEFAULT_OG_DESCRIPTION = "Temukan lowongan, kirim lamaran, dan terhubung langsung dengan perusahaan di Sifela.id.";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -156,6 +162,98 @@ import SIFELA_DATA from "./data.js";
     const days = Math.floor(hours / 24);
     if (days < 7) return days + " hari";
     return new Date(t).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  }
+
+  function setMeta(selector, value) {
+    const el = $(selector);
+    if (el) el.setAttribute("content", value || "");
+  }
+
+  function jobUrl(id) {
+    return location.origin + location.pathname + "#lowongan/" + encodeURIComponent(id);
+  }
+
+  function setJobMeta(job) {
+    const title = job.title + " — Sifela.id";
+    const desc = String(job.desc || "").replace(/\s+/g, " ").trim().slice(0, 300) ||
+      "Lihat detail lowongan " + job.title + " di " + job.org + " pada Sifela.id.";
+    const url = jobUrl(job.id);
+    document.title = title;
+    setMeta('meta[name="description"]', desc);
+    setMeta("#og-title", title);
+    setMeta("#og-description", desc);
+    setMeta("#og-url", url);
+    setMeta("#twitter-title", title);
+    setMeta("#twitter-description", desc);
+    const canonical = $("#job-canonical");
+    if (canonical) canonical.setAttribute("href", url);
+    const ogType = $("#og-type");
+    if (ogType) ogType.setAttribute("content", "article");
+
+    const type = job.type === "project" || job.type === "freelance" ? "CONTRACT" : "PART_TIME";
+    const salary = Number(job.pay) > 0 ? {
+      "@type": "MonetaryAmount",
+      currency: "IDR",
+      value: {
+        "@type": "QuantitativeValue",
+        value: Number(job.pay),
+        unitText: unitLabel(job.unit).replace(/^\//, "") || "jam"
+      }
+    } : undefined;
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      title: job.title,
+      description: job.desc || job.title,
+      identifier: { "@type": "PropertyValue", name: "Sifela.id", value: job.id },
+      datePosted: job.createdAt || new Date().toISOString(),
+      validThrough: job.expiresAt || undefined,
+      employmentType: type,
+      hiringOrganization: { "@type": "Organization", name: job.org },
+      jobLocation: {
+        "@type": "Place",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: cityOf(job.city).name,
+          addressRegion: cityOf(job.city).name,
+          addressCountry: "ID"
+        }
+      },
+      baseSalary: salary,
+      url: url
+    };
+    const ld = $("#job-jsonld");
+    if (ld) ld.textContent = JSON.stringify(schema);
+  }
+
+  function resetJobMeta() {
+    document.title = DEFAULT_TITLE;
+    setMeta('meta[name="description"]', DEFAULT_DESCRIPTION);
+    setMeta("#og-title", DEFAULT_TITLE);
+    setMeta("#og-description", DEFAULT_OG_DESCRIPTION);
+    setMeta("#og-url", "https://sifela-id.vercel.app/");
+    setMeta("#twitter-title", DEFAULT_TITLE);
+    setMeta("#twitter-description", DEFAULT_OG_DESCRIPTION);
+    const canonical = $("#job-canonical");
+    if (canonical) canonical.setAttribute("href", "https://sifela-id.vercel.app/");
+    const ogType = $("#og-type");
+    if (ogType) ogType.setAttribute("content", "website");
+    const ld = $("#job-jsonld");
+    if (ld) ld.textContent = "{}";
+  }
+
+  function detailIdFromHash() {
+    const m = location.hash.match(/^#lowongan\/([0-9a-f-]{36})$/i);
+    return m ? m[1] : null;
+  }
+
+  function openDetailFromHash() {
+    const id = detailIdFromHash();
+    if (!id) return;
+    const job = DATA.jobs.find(j => j.id === id);
+    if (!job) return;
+    if (state.modal === "job" && state.detailId === id) return;
+    openJob(id);
   }
 
   /* area + jarak, tanpa mengulang "Remote" dua kali */
@@ -363,6 +461,8 @@ import SIFELA_DATA from "./data.js";
       desc: r.description || "",
       owner: r.employer_id,
       status: r.status || "pending",
+      createdAt: r.created_at || null,
+      expiresAt: r.expires_at || null,
       custom: true
     };
   }
@@ -1817,10 +1917,18 @@ import SIFELA_DATA from "./data.js";
   }
 
   function closeModal() {
+    const wasJob = state.modal === "job";
     $("#modal-root").classList.add("hidden");
     $("#modal-sheet").innerHTML = "";
     document.body.style.overflow = "";
     state.modal = null;
+    if (wasJob) {
+      state.detailId = null;
+      resetJobMeta();
+      if (detailIdFromHash()) {
+        history.replaceState(null, "", location.pathname + location.search);
+      }
+    }
   }
 
   function openLegal(kind) {
@@ -1979,10 +2087,15 @@ import SIFELA_DATA from "./data.js";
           (applied ? "Sudah dilamar" : "Lamar sekarang") + "</button>" +
         '<button class="btn btn-outline" id="jd-save">' + (saved ? "★ Tersimpan" : "☆ Simpan") + "</button>" +
         '<button class="btn btn-outline" id="jd-contact">💬 Kontak</button>' +
+        '<button class="btn btn-outline" id="jd-copy">🔗 Salin tautan</button>' +
       "</div>" +
       '<p class="paywall-foot">Seluruh proses lamaran dilakukan langsung di Sifela.</p>',
       { name: "job", wide: true }
     );
+
+    state.detailId = job.id;
+    setJobMeta(job);
+    history.replaceState(null, "", location.pathname + location.search + "#lowongan/" + job.id);
 
     $("#jd-apply").addEventListener("click", () => {
       if (!currentUid()) { closeModal(); showView("auth"); setAuthTab("login"); return; }
@@ -2007,6 +2120,16 @@ import SIFELA_DATA from "./data.js";
         return;
       }
       openChatWith(job.owner, job.id);
+    });
+
+    $("#jd-copy").addEventListener("click", async () => {
+      const url = jobUrl(job.id);
+      try {
+        await navigator.clipboard.writeText(url);
+        toast("Tautan lowongan disalin.", "ok");
+      } catch (_) {
+        window.prompt("Salin tautan lowongan:", url);
+      }
     });
 
     const scoreBtn = $("#modal-sheet [data-open-premium]");
@@ -2688,6 +2811,11 @@ import SIFELA_DATA from "./data.js";
     document.addEventListener("keydown", (ev) => {
       if (ev.key === "Escape" && state.modal) closeModal();
     });
+
+    window.addEventListener("hashchange", () => {
+      if (detailIdFromHash()) openDetailFromHash();
+      else if (state.modal === "job") closeModal();
+    });
   }
 
   function toggleIn(arr, val) {
@@ -2779,6 +2907,7 @@ import SIFELA_DATA from "./data.js";
 
     await restoreSession();
     await loadJobs();
+    openDetailFromHash();
     if (state.user) { enterApp(); return; }
     showView("landing");
   }
