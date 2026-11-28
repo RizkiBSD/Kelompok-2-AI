@@ -86,7 +86,12 @@ import SIFELA_DATA from "./data.js";
   }
 
   function unitLabel(u) {
-    return { jam: "/jam", proyek: "/proyek", hari: "/hari", paket: "/paket" }[u] || "";
+    return { jam: "/jam", proyek: "/proyek", hari: "/hari", paket: "/paket", bulan: "/bulan" }[u] || "";
+  }
+
+  function payLabel(job) {
+    if (!job || Number(job.pay) <= 0) return "Gaji tidak disebutkan";
+    return fmtRp(job.pay) + unitLabel(job.unit);
   }
 
   function hourly(job) {
@@ -119,7 +124,7 @@ import SIFELA_DATA from "./data.js";
   }
 
   function km(d) {
-    if (d <= 0) return "Remote";
+    if (d <= 0) return "0 km";
     return d.toFixed(1).replace(".0", "") + " km";
   }
 
@@ -310,7 +315,7 @@ import SIFELA_DATA from "./data.js";
     return {
       id: r.id,
       title: r.title || "Lowongan",
-      org: owner.company_name || owner.full_name || "Mitra Sifela",
+      org: r.company_name || owner.company_name || owner.full_name || "Mitra Sifela",
       cat: r.category || "fnb",
       type: r.employment_type || "shift",
       city: r.city || "bandung",
@@ -334,6 +339,7 @@ import SIFELA_DATA from "./data.js";
       views: Number(r.views) || 0,
       boosted: !!r.boosted,
       desc: r.description || "",
+      sourceUrl: r.source_url || "",
       owner: r.employer_id,
       status: r.status || "pending",
       custom: true
@@ -669,7 +675,7 @@ import SIFELA_DATA from "./data.js";
         '<div class="job-tags">' + (job.skills || []).slice(0, 4).map(t => '<span class="tag">' + esc(t) + "</span>").join("") + "</div>" +
       "</div>" +
       '<div class="job-side">' +
-        '<div class="job-pay">' + fmtRp(job.pay) + "<span>" + unitLabel(job.unit) + "</span></div>" +
+        '<div class="job-pay">' + payLabel(job) + "</div>" +
         scoreHtml +
       "</div>" +
     "</article>";
@@ -836,7 +842,7 @@ import SIFELA_DATA from "./data.js";
             '<div class="job-logo">' + ICONS[job.cat] + "</div>" +
             "<div><strong>" + esc(job.title) + "</strong>" +
             '<div class="job-org">' + esc(job.org) + " · " + esc(areaText(job)) + " · " +
-              fmtRp(job.pay) + unitLabel(job.unit) + "</div></div>" +
+              payLabel(job) + "</div></div>" +
             '<span class="app-status">Tersimpan</span>' +
           "</div>").join("") + "</div></div>"
       : "";
@@ -1090,7 +1096,7 @@ import SIFELA_DATA from "./data.js";
           '<div class="owner-row">' +
             '<div class="job-logo">' + ICONS[j.cat] + "</div>" +
             "<div><strong>" + esc(j.title) + "</strong>" +
-              '<div class="job-org">' + esc(j.area || j.city) + " · " + fmtRp(j.pay) + unitLabel(j.unit) + "</div>" +
+              '<div class="job-org">' + esc(j.area || j.city) + " · " + payLabel(j) + "</div>" +
               '<div class="owner-tags">' + statusBadge(j) +
                 '<span class="badge badge-type">' + TYPE_LABEL[j.type] + "</span>" +
                 (j.boosted ? '<span class="badge badge-boost">Ditonjolkan</span>' : "") +
@@ -1351,7 +1357,7 @@ import SIFELA_DATA from "./data.js";
       ? '<div class="app-list">' + state.admin.jobs.map(j =>
           '<div class="app-row">' +
             "<div><strong>" + esc(j.title) + "</strong>" +
-              '<div class="job-org">' + esc(j.org) + " · " + esc(j.area || j.city) + " · " + fmtRp(j.pay) + unitLabel(j.unit) + "</div>" +
+              '<div class="job-org">' + esc(j.org) + " · " + esc(j.area || j.city) + " · " + payLabel(j) + "</div>" +
               '<p class="panel-sub">' + esc((j.desc || "").slice(0, 160)) + "</p></div>" +
             '<div class="owner-actions">' +
               '<button class="btn btn-outline btn-sm" data-job="' + j.id + '">Lihat</button>' +
@@ -1613,7 +1619,7 @@ import SIFELA_DATA from "./data.js";
         "<p>" + esc(job.org) + " · " + esc(areaText(job)) + "</p></div>" +
       "</div>" +
       '<div class="jd-grid">' +
-        '<div class="jd-cell"><span>Upah</span><b>' + fmtRp(job.pay) + unitLabel(job.unit) + "</b></div>" +
+        '<div class="jd-cell"><span>Upah</span><b>' + payLabel(job) + "</b></div>" +
         '<div class="jd-cell"><span>Hari</span><b>' + daysText(job) + "</b></div>" +
         (timeText(job) ? '<div class="jd-cell"><span>Jam</span><b>' + timeText(job) + "</b></div>" : "") +
         '<div class="jd-cell"><span>Durasi</span><b>' + (job.hours ? job.hours + " jam/shift" : "Per proyek") + "</b></div>" +
@@ -1623,6 +1629,9 @@ import SIFELA_DATA from "./data.js";
           : "") +
       "</div>" +
       '<p class="jd-desc">' + esc(job.desc) + "</p>" +
+      (job.sourceUrl
+        ? '<p><a class="source-link" href="' + esc(job.sourceUrl) + '" target="_blank" rel="noopener noreferrer">Lihat sumber lowongan ↗</a></p>'
+        : "") +
       (isConflict(job) && !isPremium()
         ? '<div class="demo-note">⚠️ Shift ini kemungkinan bentrok dengan hari tersediamu. Atur ulang di Profil.</div>'
         : "") +
